@@ -39,7 +39,11 @@ class DeadCodeRule(BaseRule):
                 continue
 
             # Skip checking symbols defined in tests or examples or setup files
-            is_test_or_example = "test" in sf.relative_path or "example" in sf.relative_path or "setup.py" in sf.filepath
+            is_test_or_example = (
+                "test" in sf.relative_path
+                or "example" in sf.relative_path
+                or "setup.py" in sf.filepath
+            )
             if is_test_or_example:
                 continue
 
@@ -56,7 +60,7 @@ class DeadCodeRule(BaseRule):
                     # Check if referenced in the same file (more than once, since definition is once)
                     content = file_contents.get(sf.filepath, "")
                     matches = re.findall(r"\b" + re.escape(sym.name) + r"\b", content)
-                    if len(matches) <= 1: # Only defined, never called
+                    if len(matches) <= 1:  # Only defined, never called
                         violations.append(
                             Violation(
                                 rule_name=self.name,

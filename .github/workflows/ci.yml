@@ -2,9 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - release/v1.0-validation
+
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+
+  workflow_dispatch:
+
 
 jobs:
   test:
@@ -13,8 +20,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          # Full matrix on Ubuntu
+          - os: ubuntu-latest
+            python-version: "3.11"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: ubuntu-latest
+            python-version: "3.14"
+          # Latest stable version on Windows & macOS
+          - os: windows-latest
+            python-version: "3.13"
+          - os: macos-latest
+            python-version: "3.13"
 
     steps:
     - uses: actions/checkout@v4
@@ -33,7 +53,10 @@ jobs:
         pip install pytest pytest-cov mypy ruff
 
     - name: Run Ruff Lint check
-      run: ruff check src/ tests/
+      run: ruff check .
+
+    - name: Run Ruff Format check
+      run: ruff format --check .
 
     - name: Run Mypy Type check
       run: mypy src/
@@ -41,5 +64,6 @@ jobs:
     - name: Run Pytest Suite
       run: pytest --cov=src --cov-report=xml
 
-    - name: Verify Aedile CLI Doctor command
-      run: aedile doctor
+    - name: Verify Aedile CLI Rule Compiler
+      run: python -m aedile compile-rules
+

@@ -32,7 +32,9 @@ class Scanner:
         norm_path = os.path.relpath(filepath, project_root).replace(os.sep, "/")
 
         for pattern in self.config.exclude:
-            if fnmatch.fnmatch(norm_path, pattern) or fnmatch.fnmatch(os.path.basename(filepath), pattern):
+            if fnmatch.fnmatch(norm_path, pattern) or fnmatch.fnmatch(
+                os.path.basename(filepath), pattern
+            ):
                 return True
         return False
 
@@ -47,7 +49,9 @@ class Scanner:
         # Step 1: Discover all target files
         target_files: list[str] = []
         for src_dir in self.config.src_dirs:
-            full_src_path = os.path.abspath(os.path.join(project_root, src_dir) if not os.path.isabs(src_dir) else src_dir)
+            full_src_path = os.path.abspath(
+                os.path.join(project_root, src_dir) if not os.path.isabs(src_dir) else src_dir
+            )
             if not os.path.exists(full_src_path):
                 logger.warning(f"Source directory not found: {full_src_path}")
                 continue
@@ -146,7 +150,11 @@ class Scanner:
         return violations
 
     def generate_report(
-        self, files: list[SourceFile], graph: ArchitectureGraph, violations: list[Violation], scan_duration: float
+        self,
+        files: list[SourceFile],
+        graph: ArchitectureGraph,
+        violations: list[Violation],
+        scan_duration: float,
     ) -> Report:
         """Calculates project metrics and builds the final Report object."""
         total_loc = 0

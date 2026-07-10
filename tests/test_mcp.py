@@ -2,19 +2,20 @@ import io
 import json
 import os
 import sys
-from typing import Any
+
 import pytest
 
-from aedile.shared.config import Config
-from aedile.core.models import SourceFile, Symbol, Import
-from aedile.core.similarity import SimilarityEngine
+from aedile.core.models import SourceFile, Symbol
 from aedile.core.optimizer import ReasoningOptimizer
+from aedile.core.similarity import SimilarityEngine
 from aedile.core.verifier import ArchitectureVerifier
 from aedile.mcp.server import AedileMcpServer
+from aedile.shared.config import Config
 
 
 def test_similarity_engine_tokenization() -> None:
     from aedile.core.similarity import tokenize
+
     tokens = tokenize("validateUserCredentials_API")
     assert "validate" in tokens
     assert "user" in tokens
@@ -34,13 +35,26 @@ def test_similarity_engine_indexing_and_search() -> None:
         file_size=100,
         language="python",
         symbols=[
-            Symbol(name="authenticate_user", kind="function", line=10, end_line=20, docstring="Validates user credentials."),
-            Symbol(name="_secret_helper", kind="function", line=22, end_line=25, docstring="Internal helper", is_private=True),
-        ]
+            Symbol(
+                name="authenticate_user",
+                kind="function",
+                line=10,
+                end_line=20,
+                docstring="Validates user credentials.",
+            ),
+            Symbol(
+                name="_secret_helper",
+                kind="function",
+                line=22,
+                end_line=25,
+                docstring="Internal helper",
+                is_private=True,
+            ),
+        ],
     )
 
     engine.index_project([sf])
-    
+
     # Assert public symbol is indexed
     assert len(engine.symbol_index) == 1
     assert engine.symbol_index[0]["name"] == "authenticate_user"
@@ -71,12 +85,22 @@ def test_reasoning_optimizer() -> None:
     config = Config()
     optimizer = ReasoningOptimizer(config)
 
-    similar = [{"name": "AuthClass", "kind": "class", "relative_path": "src/auth.py", "line": 5, "score": 0.8}]
+    similar = [
+        {
+            "name": "AuthClass",
+            "kind": "class",
+            "relative_path": "src/auth.py",
+            "line": 5,
+            "score": 0.8,
+        }
+    ]
     stdlib = [{"module": "json", "keyword": "json", "description": "built-in json parsing"}]
     deps = ["requests"]
 
-    plan = optimizer.optimize_plan("authenticate user and download JSON payload", similar, stdlib, deps)
-    
+    plan = optimizer.optimize_plan(
+        "authenticate user and download JSON payload", similar, stdlib, deps
+    )
+
     assert "Review" in plan or "REVIEW" in plan
     assert "AuthClass" in plan
     assert "json" in plan
@@ -147,20 +171,25 @@ def test_path_traversal_security() -> None:
 def test_mcp_server_loop(monkeypatch: pytest.MonkeyPatch) -> None:
     # Temporary patch sys.stdin and sys.stdout with new single-tool call flow
     in_buf = io.StringIO(
-        json.dumps({"jsonrpc": "2.0", "method": "initialize", "params": {}, "id": 1}) + "\n" +
-        json.dumps({"jsonrpc": "2.0", "method": "tools/list", "id": 2}) + "\n" +
-        json.dumps({
-            "jsonrpc": "2.0", 
-            "method": "tools/call", 
-            "params": {
-                "name": "aedile_consult", 
-                "arguments": {
-                    "proposed_plan": "parse json and make HTTP request",
-                    "proposed_changes": []
-                }
-            }, 
-            "id": 3
-        }) + "\n"
+        json.dumps({"jsonrpc": "2.0", "method": "initialize", "params": {}, "id": 1})
+        + "\n"
+        + json.dumps({"jsonrpc": "2.0", "method": "tools/list", "id": 2})
+        + "\n"
+        + json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "aedile_consult",
+                    "arguments": {
+                        "proposed_plan": "parse json and make HTTP request",
+                        "proposed_changes": [],
+                    },
+                },
+                "id": 3,
+            }
+        )
+        + "\n"
     )
     out_buf = io.StringIO()
 

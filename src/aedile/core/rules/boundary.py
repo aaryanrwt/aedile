@@ -29,7 +29,9 @@ class BoundaryRule(BaseRule):
                 private_idx = -1
                 for idx, part in enumerate(target_parts):
                     # Check if part starts with private prefix
-                    is_private_seg = any(part.startswith(prefix) for prefix in self.config.private_prefixes)
+                    is_private_seg = any(
+                        part.startswith(prefix) for prefix in self.config.private_prefixes
+                    )
                     # Also check for explicit "internal" segments
                     if is_private_seg or part == "internal":
                         private_idx = idx

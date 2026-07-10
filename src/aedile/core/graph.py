@@ -184,12 +184,12 @@ class ArchitectureGraph:
 
         svg_lines = [
             f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {svg_width} {svg_height}" width="100%" height="100%" style="background-color: #0d1117; font-family: sans-serif;">',
-            '  <defs>',
+            "  <defs>",
             '    <marker id="arrow" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">',
             '      <path d="M 0 0 L 10 5 L 0 10 z" fill="#58a6ff" />',
-            '    </marker>',
-            '  </defs>',
-            '  <rect width="100%" height="100%" fill="#0d1117" />'
+            "    </marker>",
+            "  </defs>",
+            '  <rect width="100%" height="100%" fill="#0d1117" />',
         ]
 
         # Draw edges
@@ -220,7 +220,7 @@ class ArchitectureGraph:
             )
             # Add labels offset
             svg_lines.append(
-                f'  <text x="{x:.1f}" y="{y-18:.1f}" font-size="12" fill="#c9d1d9" '
+                f'  <text x="{x:.1f}" y="{y - 18:.1f}" font-size="12" fill="#c9d1d9" '
                 f'text-anchor="middle" font-weight="bold">{node}</text>'
             )
 

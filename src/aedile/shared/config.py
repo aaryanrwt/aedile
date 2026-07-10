@@ -1,8 +1,7 @@
 import os
 import re
+import tomllib
 from typing import Any
-
-import tomllib  # type: ignore[import-not-found]
 
 from aedile.shared.errors import ConfigError
 
@@ -110,7 +109,9 @@ class Config:
         self.module_boundaries = rules.get("module_boundaries", self.module_boundaries)
         self.naming_conventions = rules.get("naming_conventions", self.naming_conventions)
         self.dead_code_detection = rules.get("dead_code_detection", self.dead_code_detection)
-        self.duplicate_architecture = rules.get("duplicate_architecture", self.duplicate_architecture)
+        self.duplicate_architecture = rules.get(
+            "duplicate_architecture", self.duplicate_architecture
+        )
 
         # Parse naming patterns
         naming = rules.get("naming", {})
@@ -119,7 +120,9 @@ class Config:
             if isinstance(patterns, list):
                 for p in patterns:
                     if not isinstance(p, dict) or "path_pattern" not in p:
-                        raise ConfigError("Naming pattern must be a table containing 'path_pattern'")
+                        raise ConfigError(
+                            "Naming pattern must be a table containing 'path_pattern'"
+                        )
                     try:
                         self.naming_patterns.append(
                             NamingPattern(
@@ -152,17 +155,25 @@ class Config:
         # Validate project
         if not isinstance(self.project_name, str) or not self.project_name:
             raise ConfigError("project.name must be a non-empty string")
-        if not isinstance(self.src_dirs, list) or not all(isinstance(d, str) for d in self.src_dirs):
+        if not isinstance(self.src_dirs, list) or not all(
+            isinstance(d, str) for d in self.src_dirs
+        ):
             raise ConfigError("project.src_dirs must be a list of strings")
         if not isinstance(self.exclude, list) or not all(isinstance(e, str) for e in self.exclude):
             raise ConfigError("project.exclude must be a list of strings")
-        if not isinstance(self.languages, list) or not all(isinstance(l, str) for l in self.languages):
+        if not isinstance(self.languages, list) or not all(
+            isinstance(l, str) for l in self.languages
+        ):
             raise ConfigError("project.languages must be a list of strings")
-        if not isinstance(self.confidence_threshold, (int, float)) or not (0.0 <= self.confidence_threshold <= 1.0):
+        if not isinstance(self.confidence_threshold, (int, float)) or not (
+            0.0 <= self.confidence_threshold <= 1.0
+        ):
             raise ConfigError("project.confidence_threshold must be a float between 0.0 and 1.0")
 
         # Validate layers
-        if not isinstance(self.layer_order, list) or not all(isinstance(o, str) for o in self.layer_order):
+        if not isinstance(self.layer_order, list) or not all(
+            isinstance(o, str) for o in self.layer_order
+        ):
             raise ConfigError("layers.order must be a list of strings")
         if not isinstance(self.layer_mappings, dict) or not all(
             isinstance(k, str) and isinstance(v, list) and all(isinstance(val, str) for val in v)
@@ -183,6 +194,8 @@ class Config:
         if not isinstance(self.duplicate_similarity_threshold, (int, float)) or not (
             0.0 <= self.duplicate_similarity_threshold <= 1.0
         ):
-            raise ConfigError("rules.duplicates.similarity_threshold must be a float between 0.0 and 1.0")
+            raise ConfigError(
+                "rules.duplicates.similarity_threshold must be a float between 0.0 and 1.0"
+            )
         if not isinstance(self.duplicate_min_file_size, int) or self.duplicate_min_file_size < 0:
             raise ConfigError("rules.duplicates.min_file_size_bytes must be a non-negative integer")

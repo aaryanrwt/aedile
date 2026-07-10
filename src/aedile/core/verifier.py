@@ -1,9 +1,10 @@
-import os
 import copy
+import os
+
 from aedile.core.graph import ArchitectureGraph
-from aedile.core.models import SourceFile, Import, Violation
+from aedile.core.models import Import, SourceFile, Violation
 from aedile.core.parser import compute_module_name, os_path_root
-from aedile.core.rules import CycleRule, LayerRule, BoundaryRule, NamingRule
+from aedile.core.rules import BoundaryRule, CycleRule, LayerRule, NamingRule
 from aedile.shared.config import Config
 
 
@@ -32,11 +33,14 @@ class ArchitectureVerifier:
 
             # Standardize path separator to forward slash
             rel_path = rel_path.replace(os.sep, "/")
-            
+
             # Path traversal prevention
             filepath = os.path.abspath(os.path.join(project_root, rel_path))
             safe_project_root = os.path.abspath(project_root)
-            if not filepath.startswith(safe_project_root + os.sep) and filepath != safe_project_root:
+            if (
+                not filepath.startswith(safe_project_root + os.sep)
+                and filepath != safe_project_root
+            ):
                 return [
                     Violation(
                         rule_name="security_check",

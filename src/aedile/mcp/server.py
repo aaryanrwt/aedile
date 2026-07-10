@@ -1,17 +1,17 @@
-import sys
 import json
 import os
+import sys
 import traceback
 from typing import Any
 
-from aedile.shared.config import Config
-from aedile.core.scanner import Scanner
-from aedile.infrastructure.cache import ScanCache
-from aedile.core.similarity import SimilarityEngine
-from aedile.core.optimizer import ReasoningOptimizer
-from aedile.core.verifier import ArchitectureVerifier
 from aedile.core.graph import ArchitectureGraph
 from aedile.core.models import SourceFile
+from aedile.core.optimizer import ReasoningOptimizer
+from aedile.core.scanner import Scanner
+from aedile.core.similarity import SimilarityEngine
+from aedile.core.verifier import ArchitectureVerifier
+from aedile.infrastructure.cache import ScanCache
+from aedile.shared.config import Config
 
 # Force stderr streaming for console debugging
 sys.stdout = sys.stdout
@@ -76,7 +76,9 @@ class AedileMcpServer:
                 output.append("\n#### 🔍 Codebase Reuse Opportunities")
                 output.append("Do NOT duplicate logic. Reuse these existing abstractions:")
                 for s in similar:
-                    output.append(f"- **{s['name']}** ({s['kind']}) in {s['relative_path']}:L{s['line']} (Confidence: {s['score']})")
+                    output.append(
+                        f"- **{s['name']}** ({s['kind']}) in {s['relative_path']}:L{s['line']} (Confidence: {s['score']})"
+                    )
 
             if stdlib:
                 output.append("\n#### 📦 Python Standard Library")
@@ -91,17 +93,23 @@ class AedileMcpServer:
             # General reasoning advice
             opt_plan = self.optimizer.optimize_plan(plan, similar, stdlib, deps)
             # Crop title from optimizer output to prevent duplicate header
-            opt_plan_cleaned = opt_plan.replace("### 🛡️ AEDILE ENGINEERING INTELLIGENCE REVIEW\n", "").strip()
+            opt_plan_cleaned = opt_plan.replace(
+                "### 🛡️ AEDILE ENGINEERING INTELLIGENCE REVIEW\n", ""
+            ).strip()
             output.append("\n" + opt_plan_cleaned)
 
         if proposed_changes:
             # Simulates imports and runs layering/cycle checks
-            violations = self.verifier.verify_changes(self.project_root, self.files, proposed_changes)
+            violations = self.verifier.verify_changes(
+                self.project_root, self.files, proposed_changes
+            )
             if violations:
                 output.append("\n#### ⚠️ Architectural Violations Detected")
                 for v in violations:
                     severity = "ERROR" if v.severity == "error" else "WARNING"
-                    output.append(f"- **{severity}** in {v.relative_path}:L{v.line} ({v.rule_name}): {v.message}")
+                    output.append(
+                        f"- **{severity}** in {v.relative_path}:L{v.line} ({v.rule_name}): {v.message}"
+                    )
             else:
                 output.append("\n#### ✅ Architecture Compliant")
                 output.append("Proposed file changes comply with layering and cycle rules.")
@@ -196,7 +204,9 @@ class AedileMcpServer:
                             result = self.handle_consult(arguments)
                         else:
                             result = {
-                                "content": [{"type": "text", "text": f"Error: Tool '{name}' not found."}],
+                                "content": [
+                                    {"type": "text", "text": f"Error: Tool '{name}' not found."}
+                                ],
                                 "isError": True,
                             }
                     except Exception as e:

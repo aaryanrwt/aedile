@@ -1,5 +1,6 @@
 import os
 import tempfile
+
 from aedile.core.graph import ArchitectureGraph
 from aedile.core.parser import (
     PythonParser,
@@ -10,11 +11,15 @@ from aedile.core.parser import (
 
 def test_compute_module_name() -> None:
     # Test top-level module resolution
-    m1 = compute_module_name("c:/Users/User/project/src/aedile/core/scanner.py", "c:/Users/User/project", ["src"])
+    m1 = compute_module_name(
+        "c:/Users/User/project/src/aedile/core/scanner.py", "c:/Users/User/project", ["src"]
+    )
     assert m1 == "aedile.core.scanner"
 
     # Test init package resolution
-    m2 = compute_module_name("c:/Users/User/project/src/aedile/__init__.py", "c:/Users/User/project", ["src"])
+    m2 = compute_module_name(
+        "c:/Users/User/project/src/aedile/__init__.py", "c:/Users/User/project", ["src"]
+    )
     assert m2 == "aedile"
 
 
@@ -54,7 +59,7 @@ def global_fn():
     try:
         parser = PythonParser()
         sf = parser.parse(filepath, os.path.dirname(filepath), [os.path.dirname(filepath)])
-        
+
         # Verify imports
         assert len(sf.imports) == 4
         # Check absolute import
@@ -65,11 +70,11 @@ def global_fn():
         # Verify symbols
         classes = [s for s in sf.symbols if s.kind == "class"]
         funcs = [s for s in sf.symbols if s.kind == "function"]
-        
+
         assert len(classes) == 1
         assert classes[0].name == "Scanner"
         assert classes[0].docstring == "Scanner class docstring."
-        
+
         assert len(funcs) == 1
         assert funcs[0].name == "global_fn"
     finally:
