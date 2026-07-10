@@ -16,7 +16,7 @@ class BaseParser(abc.ABC):
 
 def compute_module_name(filepath: str, project_root: str, src_dirs: list[str]) -> str:
     """Computes the fully-qualified Python module name for a given file path.
-    
+
     Example:
       filepath: /project/src/aedile/core/scanner.py
       src_dirs: [/project/src]
@@ -26,7 +26,9 @@ def compute_module_name(filepath: str, project_root: str, src_dirs: list[str]) -
     # Find the matching source directory
     matched_src_dir = None
     for src_dir in src_dirs:
-        abs_src_dir = os.path.abspath(os.path.join(project_root, src_dir) if not os.path.isabs(src_dir) else src_dir)
+        abs_src_dir = os.path.abspath(
+            os.path.join(project_root, src_dir) if not os.path.isabs(src_dir) else src_dir
+        )
         if abs_filepath.startswith(abs_src_dir):
             matched_src_dir = abs_src_dir
             break
@@ -110,7 +112,9 @@ class PythonParser(BaseParser):
 
                 # Resolve relative import
                 if is_relative:
-                    module_path = resolve_relative_import(source_module, node.level, imported_module)
+                    module_path = resolve_relative_import(
+                        source_module, node.level, imported_module
+                    )
                 else:
                     module_path = imported_module
 
@@ -143,7 +147,9 @@ class PythonParser(BaseParser):
                 # Do not record nested functions as module symbols
                 # We can check parent node types or just process all functions
                 # but architectural components are usually top-level
-                is_toplevel = isinstance(getattr(node, "parent", None), ast.Module) or node.col_offset == 0
+                is_toplevel = (
+                    isinstance(getattr(node, "parent", None), ast.Module) or node.col_offset == 0
+                )
                 if is_toplevel:
                     docstring = ast.get_docstring(node)
                     symbols.append(
@@ -159,7 +165,9 @@ class PythonParser(BaseParser):
                 self.generic_visit(node)
 
             def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-                is_toplevel = isinstance(getattr(node, "parent", None), ast.Module) or node.col_offset == 0
+                is_toplevel = (
+                    isinstance(getattr(node, "parent", None), ast.Module) or node.col_offset == 0
+                )
                 if is_toplevel:
                     docstring = ast.get_docstring(node)
                     symbols.append(
@@ -177,7 +185,7 @@ class PythonParser(BaseParser):
         # Set parent reference to detect top-level functions easily
         for parent in ast.walk(tree):
             for child in ast.iter_child_nodes(parent):
-                setattr(child, "parent", parent)
+                child.parent = parent  # type: ignore[attr-defined]
 
         visitor = ASTVisitor()
         visitor.visit(tree)
@@ -221,7 +229,6 @@ def os_path_root(filepath: str, relative_path: str) -> str:
     rel_file = relative_path.replace("\\", "/")
 
     if abs_file.endswith(rel_file):
-        root = abs_file[:-len(rel_file)]
+        root = abs_file[: -len(rel_file)]
         return root.rstrip("/")
     return os.path.dirname(filepath)
-

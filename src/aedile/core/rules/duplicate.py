@@ -20,7 +20,12 @@ class DuplicateRule(BaseRule):
                 content = f.read()
             # Remove comments and strings to compare logic structure
             content_no_comments = re.sub(r"#.*", "", content)
-            content_no_strings = re.sub(r'""".*?"""|\'\'\'.*?\'\'\'|"[^"]*"|\'[^\']*\'', "", content_no_comments, flags=re.DOTALL)
+            content_no_strings = re.sub(
+                r'""".*?"""|\'\'\'.*?\'\'\'|"[^"]*"|\'[^\']*\'',
+                "",
+                content_no_comments,
+                flags=re.DOTALL,
+            )
             words = re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", content_no_strings)
             return set(words)
         except Exception:
@@ -38,11 +43,15 @@ class DuplicateRule(BaseRule):
         for sf in files:
             if sf.file_size < self.config.duplicate_min_file_size:
                 continue
-            if "test" in sf.relative_path or "example" in sf.relative_path or sf.filepath.endswith("__init__.py"):
+            if (
+                "test" in sf.relative_path
+                or "example" in sf.relative_path
+                or sf.filepath.endswith("__init__.py")
+            ):
                 continue
 
             w_set = self._get_words_set(sf.filepath)
-            if len(w_set) > 5: # Only compare if file has sufficient tokens
+            if len(w_set) > 5:  # Only compare if file has sufficient tokens
                 eligible_files.append(sf)
                 word_sets[sf.filepath] = w_set
 
@@ -85,7 +94,7 @@ class DuplicateRule(BaseRule):
                             relative_path=sf_a.relative_path,
                             line=1,
                             message=(
-                                f"Duplicate architecture: High structural similarity ({similarity*100:.1f}%) "
+                                f"Duplicate architecture: High structural similarity ({similarity * 100:.1f}%) "
                                 f"detected between '{sf_a.relative_path}' and '{sf_b.relative_path}'."
                             ),
                             offending_symbol=sf_b.relative_path,

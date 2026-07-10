@@ -1,8 +1,10 @@
 import os
 import re
 from typing import Any
-from aedile.core.models import SourceFile, Symbol
+
+from aedile.core.models import SourceFile
 from aedile.shared.config import Config
+
 
 def tokenize(text: str) -> set[str]:
     """Tokenizes text by splitting camelCase, snake_case, and removing non-alphanumeric chars."""
@@ -12,6 +14,7 @@ def tokenize(text: str) -> set[str]:
     # Replace symbols with spaces
     text = re.sub(r"[^a-z0-9]", " ", text)
     return {w for w in text.split() if len(w) > 1}
+
 
 # Mapping of common concepts to Python Standard Library modules
 STDLIB_MAP = {
@@ -57,16 +60,18 @@ class SimilarityEngine:
                 name_tokens = tokenize(sym.name)
                 doc_tokens = tokenize(sym.docstring) if sym.docstring else set()
 
-                self.symbol_index.append({
-                    "name": sym.name,
-                    "kind": sym.kind,
-                    "filepath": sf.filepath,
-                    "relative_path": sf.relative_path,
-                    "line": sym.line,
-                    "name_tokens": name_tokens,
-                    "doc_tokens": doc_tokens,
-                    "all_tokens": name_tokens | doc_tokens,
-                })
+                self.symbol_index.append(
+                    {
+                        "name": sym.name,
+                        "kind": sym.kind,
+                        "filepath": sf.filepath,
+                        "relative_path": sf.relative_path,
+                        "line": sym.line,
+                        "name_tokens": name_tokens,
+                        "doc_tokens": doc_tokens,
+                        "all_tokens": name_tokens | doc_tokens,
+                    }
+                )
 
     def search_symbols(self, query: str, threshold: float = 0.3) -> list[dict[str, Any]]:
         """Searches indexed symbols for semantic/lexical overlap based on query tokens."""
@@ -83,16 +88,20 @@ class SimilarityEngine:
 
             # Weight name tokens higher than docstring tokens
             name_intersection = query_tokens & item["name_tokens"]
-            score = (len(name_intersection) * 1.5 + len(intersection - name_intersection)) / len(query_tokens)
+            score = (len(name_intersection) * 1.5 + len(intersection - name_intersection)) / len(
+                query_tokens
+            )
 
             if score >= threshold:
-                results.append({
-                    "name": item["name"],
-                    "kind": item["kind"],
-                    "relative_path": item["relative_path"],
-                    "line": item["line"],
-                    "score": round(score, 2),
-                })
+                results.append(
+                    {
+                        "name": item["name"],
+                        "kind": item["kind"],
+                        "relative_path": item["relative_path"],
+                        "line": item["line"],
+                        "score": round(score, 2),
+                    }
+                )
 
         # Sort by match score descending
         results.sort(key=lambda x: x["score"], reverse=True)
@@ -106,12 +115,14 @@ class SimilarityEngine:
         for module, keywords in STDLIB_MAP.items():
             for kw in keywords:
                 if kw in query_text:
-                    recommendations.append({
-                        "module": module,
-                        "keyword": kw,
-                        "description": f"The Python standard library module '{module}' matches the concept '{kw}'."
-                    })
-                    break # Recommending the module once is enough
+                    recommendations.append(
+                        {
+                            "module": module,
+                            "keyword": kw,
+                            "description": f"The Python standard library module '{module}' matches the concept '{kw}'.",
+                        }
+                    )
+                    break  # Recommending the module once is enough
         return recommendations
 
     def check_dependencies(self, query: str, project_root: str) -> list[str]:

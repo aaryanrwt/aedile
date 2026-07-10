@@ -1,6 +1,7 @@
 import pytest
+
 from aedile.core.graph import ArchitectureGraph
-from aedile.core.models import SourceFile, Import
+from aedile.core.models import Import, SourceFile
 from aedile.core.rules.cycle import CycleRule
 from aedile.shared.config import Config
 from aedile.shared.errors import ConfigError
@@ -10,7 +11,7 @@ def test_cycle_rule_evaluation() -> None:
     config = Config.default()
     config.cycle_detection = True
     config.src_dirs = ["src"]
-    
+
     # File A imports B, File B imports A
     sf_a = SourceFile(
         filepath="/project/src/a.py",
@@ -37,44 +38,44 @@ def test_cycle_rule_evaluation() -> None:
 
     rule = CycleRule(config)
     violations = rule.evaluate([sf_a, sf_b], graph)
-    assert len(violations) >= 2 # Violation reported at import in both files
+    assert len(violations) >= 2  # Violation reported at import in both files
 
 
 def test_config_validation_failures() -> None:
     config = Config()
-    
+
     # Trigger name type failure
     config.project_name = ""
     with pytest.raises(ConfigError):
         config.validate()
-        
+
     # Trigger src_dirs failure
     config.project_name = "ValidName"
-    config.src_dirs = [123] # type: ignore
+    config.src_dirs = [123]  # type: ignore
     with pytest.raises(ConfigError):
         config.validate()
 
     # Trigger exclude failure
     config.src_dirs = ["src"]
-    config.exclude = [123] # type: ignore
+    config.exclude = [123]  # type: ignore
     with pytest.raises(ConfigError):
         config.validate()
 
     # Trigger languages failure
     config.exclude = []
-    config.languages = [123] # type: ignore
+    config.languages = [123]  # type: ignore
     with pytest.raises(ConfigError):
         config.validate()
 
     # Trigger layer order failure
     config.languages = ["python"]
-    config.layer_order = [123] # type: ignore
+    config.layer_order = [123]  # type: ignore
     with pytest.raises(ConfigError):
         config.validate()
 
     # Trigger layer mappings failure
     config.layer_order = ["presentation"]
-    config.layer_mappings = {123: ["**/cli/**"]} # type: ignore
+    config.layer_mappings = {123: ["**/cli/**"]}  # type: ignore
     with pytest.raises(ConfigError):
         config.validate()
 
@@ -85,7 +86,6 @@ def test_config_validation_failures() -> None:
 
     # Trigger private prefixes validation failure
     config.layer_mappings = {"presentation": ["**/cli/**"]}
-    config.private_prefixes = [123] # type: ignore
+    config.private_prefixes = [123]  # type: ignore
     with pytest.raises(ConfigError):
         config.validate()
-

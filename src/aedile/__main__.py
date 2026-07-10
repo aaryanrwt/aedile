@@ -1,10 +1,10 @@
 import argparse
 import os
 import sys
-from typing import Sequence
+from collections.abc import Sequence
 
-from aedile.shared.config import Config
 from aedile.mcp.server import AedileMcpServer
+from aedile.shared.config import Config
 
 
 def compile_agent_rules(project_root: str) -> None:
@@ -21,7 +21,11 @@ def compile_agent_rules(project_root: str) -> None:
             pass
 
     # Build the rules template
-    layers_str = " -> ".join(config.layer_order) if config.layer_order else "None (No strict layers declared)"
+    layers_str = (
+        " -> ".join(config.layer_order)
+        if config.layer_order
+        else "None (No strict layers declared)"
+    )
     src_dirs_str = ", ".join(config.src_dirs)
 
     rules_content = f"""# AEDILE ENGINEERING INTELLIGENCE LAYER GUIDELINES
@@ -66,7 +70,7 @@ Before completing your implementation task, you MUST invoke the `aedile_verify_a
             f.write(rules_content)
         with open(claudeprompt_path, "w", encoding="utf-8") as f:
             f.write(rules_content)
-        sys.stderr.write(f"[Aedile] Successfully compiled rules to .cursorrules and .claudeprompt\n")
+        sys.stderr.write("[Aedile] Successfully compiled rules to .cursorrules and .claudeprompt\n")
     except Exception as e:
         sys.stderr.write(f"[Aedile] Error compiling rules: {e}\n")
 
@@ -77,11 +81,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         description="Aedile: Engineering Intelligence Layer & MCP Server for AI Coding Agents.",
     )
     subparsers = parser.add_subparsers(dest="command")
-    
+
     # compile-rules subcommand
     subparsers.add_parser(
-        "compile-rules", 
-        help="Compile Aedile's thinking ladder and project layers into .cursorrules / .claudeprompt templates."
+        "compile-rules",
+        help="Compile Aedile's thinking ladder and project layers into .cursorrules / .claudeprompt templates.",
     )
 
     args = parser.parse_args(argv)

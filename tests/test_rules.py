@@ -1,11 +1,12 @@
 import os
 import tempfile
+
 import pytest
+
 from aedile.core.graph import ArchitectureGraph
 from aedile.core.models import Import, SourceFile, Symbol
 from aedile.core.rules import (
     BoundaryRule,
-    CycleRule,
     DeadCodeRule,
     DuplicateRule,
     LayerRule,
@@ -43,7 +44,9 @@ def test_layer_rule(base_config: Config) -> None:
         file_hash="2",
         file_size=10,
         language="python",
-        imports=[Import(module="cli.cmd", names=[], line=1)], # VIOLATION: domain imports presentation
+        imports=[
+            Import(module="cli.cmd", names=[], line=1)
+        ],  # VIOLATION: domain imports presentation
     )
 
     graph = ArchitectureGraph()
@@ -54,10 +57,12 @@ def test_layer_rule(base_config: Config) -> None:
 
     rule = LayerRule(base_config)
     violations = rule.evaluate([sf_pres, sf_dom], graph)
-    
+
     assert len(violations) == 1
     assert violations[0].rule_name == "layer_violations"
-    assert "Layer 'domain' is not allowed to import from layer 'presentation'" in violations[0].message
+    assert (
+        "Layer 'domain' is not allowed to import from layer 'presentation'" in violations[0].message
+    )
 
 
 def test_boundary_rule(base_config: Config) -> None:
@@ -83,6 +88,7 @@ def test_boundary_rule(base_config: Config) -> None:
 def test_naming_rule(base_config: Config) -> None:
     # Setup custom naming convention for presentation
     from aedile.shared.config import NamingPattern
+
     base_config.naming_patterns = [
         NamingPattern(
             path_pattern="**/cli/**",
@@ -144,9 +150,13 @@ def test_dead_code_rule(base_config: Config) -> None:
     )
 
     # Mock file contents to support regex text lookup
-    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f1, \
-         tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f2:
-        f1.write(b"class UsedClass:\n    pass\nclass DeadClass:\n    pass\nclass _private_unused:\n    pass\n")
+    with (
+        tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f1,
+        tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f2,
+    ):
+        f1.write(
+            b"class UsedClass:\n    pass\nclass DeadClass:\n    pass\nclass _private_unused:\n    pass\n"
+        )
         f2.write(b"from models.entity import UsedClass\n")
         sf_def.filepath = f1.name
         sf_use.filepath = f2.name
@@ -154,7 +164,7 @@ def test_dead_code_rule(base_config: Config) -> None:
     try:
         rule = DeadCodeRule(base_config)
         violations = rule.evaluate([sf_def, sf_use], ArchitectureGraph())
-        
+
         # DeadClass should be flagged as dead
         # _private_unused should be flagged as unused private symbol
         assert len(violations) == 2
@@ -169,22 +179,36 @@ def test_dead_code_rule(base_config: Config) -> None:
 def test_duplicate_rule(base_config: Config) -> None:
     # Create two files with exact same contents to verify duplicate trigger
     code = "def my_function(x, y):\n    res = x + y\n    return res\n"
-    
-    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f1, \
-         tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f2:
+
+    with (
+        tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f1,
+        tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f2,
+    ):
         f1.write(code.encode("utf-8"))
         f2.write(code.encode("utf-8"))
-        
-        sf1 = SourceFile(filepath=f1.name, relative_path="src/a.py", file_hash="1", file_size=150, language="python")
-        sf2 = SourceFile(filepath=f2.name, relative_path="src/b.py", file_hash="2", file_size=150, language="python")
+
+        sf1 = SourceFile(
+            filepath=f1.name,
+            relative_path="src/a.py",
+            file_hash="1",
+            file_size=150,
+            language="python",
+        )
+        sf2 = SourceFile(
+            filepath=f2.name,
+            relative_path="src/b.py",
+            file_hash="2",
+            file_size=150,
+            language="python",
+        )
 
     try:
         base_config.duplicate_min_file_size = 5
         base_config.duplicate_similarity_threshold = 0.8
-        
+
         rule = DuplicateRule(base_config)
         violations = rule.evaluate([sf1, sf2], ArchitectureGraph())
-        
+
         assert len(violations) == 1
         assert "Duplicate architecture" in violations[0].message
     finally:

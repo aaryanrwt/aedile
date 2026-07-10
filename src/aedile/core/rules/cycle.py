@@ -22,7 +22,10 @@ class CycleRule(BaseRule):
         for sf in files:
             # Recompute module name to match graph nodes
             from aedile.core.parser import compute_module_name, os_path_root
-            m_name = compute_module_name(sf.filepath, os_path_root(sf.filepath, sf.relative_path), self.config.src_dirs)
+
+            m_name = compute_module_name(
+                sf.filepath, os_path_root(sf.filepath, sf.relative_path), self.config.src_dirs
+            )
             module_to_file_map[m_name] = sf
 
         for cycle in cycles:
@@ -56,7 +59,6 @@ class CycleRule(BaseRule):
                                 severity="error",
                             )
                         )
-                        break # Only report once per file per cycle
+                        break  # Only report once per file per cycle
 
         return violations
-

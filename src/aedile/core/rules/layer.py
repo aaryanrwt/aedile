@@ -20,7 +20,9 @@ class LayerRule(BaseRule):
             patterns = self.config.layer_mappings.get(layer, [])
             for pattern in patterns:
                 # Match full path or pattern wildcard
-                if fnmatch.fnmatch(norm_path, pattern) or fnmatch.fnmatch(os.path.basename(rel_path), pattern):
+                if fnmatch.fnmatch(norm_path, pattern) or fnmatch.fnmatch(
+                    os.path.basename(rel_path), pattern
+                ):
                     return layer
         return None
 

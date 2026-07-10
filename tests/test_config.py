@@ -1,6 +1,8 @@
 import os
 import tempfile
+
 import pytest
+
 from aedile.shared.config import Config
 from aedile.shared.errors import ConfigError
 
