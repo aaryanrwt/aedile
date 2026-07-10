@@ -1,8 +1,7 @@
 import os
 import re
+import tomllib
 from typing import Any
-
-import tomllib  # type: ignore[import-not-found]
 
 from aedile.shared.errors import ConfigError
 
