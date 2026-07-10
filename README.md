@@ -1,250 +1,129 @@
+<p align="center">
+  <img src="images/logo.png" alt="Aedile Logo" width="180"/>
+</p>
+
 # Aedile
 
-### Think before AI writes code.
+> Before an AI writes code, it should prove that the code deserves to exist.
+
+**Aedile** is an engineering intelligence layer for AI coding agents. Operating locally as a zero-dependency Stdio MCP Server, it intercepts an AI agent’s plans before code generation begins—guiding agents to reuse existing codebase patterns, leverage standard libraries, and enforce layer boundaries.
 
 [![PyPI version](https://img.shields.io/pypi/v/aedile.svg?color=3B82F6)](https://pypi.org/project/aedile/)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/DietrichGebert/aedile/ci.yml?branch=main)](https://github.com/DietrichGebert/aedile/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**Aedile** helps AI coding agents make better engineering decisions before they write code. It prevents duplicate implementations, preserves architecture, and reduces unnecessary reasoning through a single MCP consultation.
+---
+
+## 1. The Problem
+
+AI coding assistants are good at generating code quickly. They are much less reliable at deciding whether new code is necessary or whether similar functionality already exists.
+
+Because LLMs reason in a vacuum, they frequently:
+* **Duplicate helpers**: Re-write existing utility methods because they do not know they exist.
+* **Violate layering boundaries**: Introduce circular imports or break separation of concerns.
+* **Inflate context windows**: Consume excessive token overhead planning and writing over-engineered logic.
+
+Aedile changes the agent's default behavior from *code generation* to *abstractions reuse*.
 
 ---
 
-## 1. Supported Agents
+## 2. How it Works
 
-Aedile is agent-agnostic and integrates into any platform that supports the Model Context Protocol (MCP) or system prompt injection:
-
-* **Claude Code**
-* **Cursor**
-* **Windsurf**
-* **Devin**
-* **OpenCode**
-* **Antigravity** / **Gemini**
-
----
-
-## 2. The Problem: AI Code Bloat & Context Decay
-
-Modern AI coding assistants are incredible at generating code. However, they are terrible at deciding whether that code **should exist**. 
-
-Because LLMs reason in a vacuum, they repeatedly:
-* **Duplicate Abstractions**: Re-write existing helper functions, serialization utilities, or domain models because they don't know they exist.
-* **Ignore Architectural Boundaries**: Introduce circular imports and violate layering boundaries (e.g., Domain layer importing Presentation modules).
-* **Waste Reasoning Tokens**: Spend thousands of reasoning tokens formulating massive, over-engineered plans for simple tasks.
-* **Inflate Context Windows**: Load excessive codebase context, raising costs and degrading LLM attention quality.
-
----
-
-## 3. Why Aedile Exists
-
-Aedile acts as the codebase guardrail. It sits directly between your AI agent and the codebase file structure, serving as the agent's memory and architecture reviewer.
-
-```mermaid
-graph TD
-    subgraph Agent Loop
-    Agent[AI Agent: Cursor/Claude] -->|1. Sends Plan| Aedile[Aedile MCP Layer]
-    Aedile -->|2. Matches Symbols| RepoInfo[(Codebase Index & Stdlib)]
-    Aedile -->|3. Simulates Imports| GraphEngine[Architecture Verifier]
-    Aedile -->|4. Returns Reuse & Layer Guidance| Agent
-    Agent -->|5. Writes Minimal Diffs| Disk[Disk Output]
-    end
-    style Aedile fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#fff
-```
-
-### The Aedile Activation Timeline
-Before the AI writes code, Aedile forces it to think like a senior engineer:
+Aedile hooks into the AI agent's planning turn via the Model Context Protocol (MCP). Before code is written, Aedile evaluates the proposed changes:
 
 ```text
 User prompt ➔ AI starts planning ➔ Aedile intercepts (MCP) ➔ Checks repository ➔ Checks architecture ➔ Checks existing abstractions ➔ Checks standard library ➔ Checks dependencies ➔ Returns advice ➔ AI writes code
 ```
 
----
-
-## 4. The Philosophy: The Decision Ladder
-
-Every line of code must justify its existence. Before generating a single new line of code, the AI agent must consult Aedile and climb the **Decision Ladder**:
-
-1. **YAGNI (You Aren't Gonna Need It)**: Does this task need to be implemented at all?
-2. **Codebase Reuse**: Does an abstraction, utility, helper, or class pattern already solve this?
-3. **Standard Library**: Does Python's built-in standard library cover it?
-4. **Platform Native**: Does a native database constraint or platform feature handle it?
-5. **Installed Dependency**: Does an already-declared package solve this?
-6. **One-Line**: Can this be solved with a simple inline expression?
-7. **Minimum Code**: Only if rungs 1–6 fail, write the absolute minimum code required.
+We designed Aedile to enforce a structured [Decision Ladder](docs/DECISION_LADDER.md)—directing the agent to exhaustively check codebase reuse, standard libraries, and pre-installed dependencies before drafting new logic.
 
 ---
 
-## 5. How it Works: The Unified `aedile_consult` Tool
+## 3. Quick Example: Adding JWT Token Generation
 
-To prevent tool sprawl and save context tokens, Aedile exposes exactly **one** tool to the agent: `aedile_consult`.
-
-Instead of running multiple tool calls to scan, verify, and check imports, the agent calls `aedile_consult` once during its planning phase. Aedile instantly processes the plan, queries the symbol index, maps dependencies, dry-runs imports in-memory on the graph, and returns a dense, actionable engineering review.
-
----
-
-## 6. Example: Adding JWT Token Generation
-
-### Without Aedile (Standard AI Agent)
-The agent decides to write a custom JWT token generator. It does not know the project already has `src/shared/auth.py` containing `create_token()`.
-* **Action**: Installs `PyJWT`, creates `src/utils/jwt.py`, and writes 40 lines of duplicate wrapper code.
-* **Cost**: `4,200` context tokens, `1,850` reasoning tokens, 14 reasoning steps.
+### Standard AI Agent
+The agent plans to write a custom JWT helper, unaware that `src/shared/auth.py` already contains a token generator. It installs a new library, adds 40 lines of wrapper code, and increases reasoning costs.
 
 ### With Aedile
-The agent calls `aedile_consult(proposed_plan="Add JWT authentication", proposed_changes=[{"path": "src/utils/jwt.py", "action": "add", "imports": ["jwt"]}])`.
-* **Aedile Output**:
-  > 🔍 **Codebase Reuse**: `create_token` and `authenticate_user` already exist in [auth.py](file:///src/shared/auth.py). Reuse them.
-  > 📦 **Python Standard Library**: For cryptography or tokens, check the built-in `secrets` module.
-  > ✅ **Architecture Compliant**: No cycle or layering violations detected.
-* **Result**: The agent abandons the duplicate file, imports `src.shared.auth`, and writes a single-line invocation.
-* **Cost**: `1,200` context tokens, `350` reasoning tokens (**81% reasoning cost reduction**).
-
----
-
-## 7. Core Architecture
-
-Aedile operates with five zero-dependency, sub-second components:
+The agent consults Aedile during its planning step:
 
 ```text
-aedile/
-├── core/
-│   ├── similarity.py   # Tokenizes symbols, checks stdlib & dependencies
-│   ├── verifier.py     # Simulates import plans against boundaries & cycle rules
-│   ├── optimizer.py    # Formulates Decision Ladder guidelines
-│   ├── parser.py       # Fast AST parsing of codebase modules
-│   └── graph.py        # Module dependency graph representation
-└── mcp/
-    └── server.py       # Stdio JSON-RPC 2.0 Server
+AI:     "I'm going to create jwt.py."
+Aedile: "Existing helper found: src/shared/auth.py. Reuse create_token()."
+AI:     "Understood. Importing src.shared.auth and writing 1 line instead of 40."
 ```
 
-* **Similarity Index**: Uses camelCase and snake_case token splits to match planned features to codebase classes and methods.
-* **Ecosystem Index**: Maps keyword queries to Python standard library modules and active dependencies from `pyproject.toml` or `requirements.txt`.
-* **In-Memory Verifier**: Dynamically edits a temporary copy of the dependency graph in memory to evaluate circular import and layering constraints before writing to disk.
+By querying Aedile, the agent avoids duplicate work, preserves the codebase architecture, and reduces reasoning token usage.
 
 ---
 
-## 8. Benchmarks: Real-World Task Execution
+## 4. Installation & Setup
 
-We compared the execution of identical backend engineering tasks (Adding authentication, refactoring endpoints, and setting up caches) in a Python workspace.
-
-All parameters (model settings, agent versions, runs per task, and repository configuration) are fully documented and reproducible. See the raw stats in [results.json](file:///c:/Users/Aaryan%20Rawat/Documents/Aedile/benchmarks/results.json) and the compiled report in [BENCHMARKS.md](file:///c:/Users/Aaryan%20Rawat/Documents/Aedile/benchmarks/BENCHMARKS.md) for the complete benchmark suite.
-
-| Metric | Without Aedile | Prompt-Only Rules | With Aedile |
-| :--- | :--- | :--- | :--- |
-| **Reasoning Cost (Avg Tokens)** | 1,850 | 1,100 | **350** |
-| **Context Window Size (Tokens)** | 4,200 | 5,100 | **1,200** |
-| **Duplicate Abstractions Created** | 3 | 1 | **0** |
-| **Circular Import Regressions** | 1 | 1 | **0** |
-| **Tool Calls Executed** | 3 | 2 | **1** |
-
----
-
-## 9. Competitor Comparison
-
-Aedile is designed to be **different**, not just better.
-
-* **Aedile vs. Static Prompting (e.g. Ponytail)**: Static system instructions suffer from "prompt drift" and decay in long sessions as the context window grows. Aedile enforces constraints dynamically via standard JSON-RPC tool calls, feeding real-time workspace facts to the agent.
-* **Aedile vs. Import Linter / Deptrac**: Most architecture tools validate code after it exists. Aedile validates the implementation plan before code is written, guiding the AI model to correct course interactively.
-* **Aedile vs. CodeQL / SonarQube**: These are heavyweight, out-of-loop scanning platforms. Aedile runs locally, requires zero configuration, and completes scans in under 40ms.
-
-
----
-
-## 10. Installation & Setup
-
-### 1. Compile System Prompts
-First, compile Aedile's system prompts in your current workspace to generate `.cursorrules` and `.claudeprompt` files matching your layer configuration:
+First, generate the prompt templates (`.cursorrules` and `.claudeprompt`) in your workspace matching your layer settings:
 ```bash
 python -m aedile compile-rules
 ```
 
-### 2. Register MCP Server
+Then register Aedile as an MCP server:
 
-* **Claude Code (`~/.claude/settings.json`)**:
-  ```json
-  {
-    "mcpServers": {
-      "aedile": {
-        "command": "python",
-        "args": ["-m", "aedile"]
-      }
+### Claude Code (`~/.claude/settings.json`)
+```json
+{
+  "mcpServers": {
+    "aedile": {
+      "command": "python",
+      "args": ["-m", "aedile"]
     }
   }
-  ```
-
-* **Cursor (`Settings -> Features -> MCP`)**:
-  * **Name**: `aedile`
-  * **Type**: `command`
-  * **Command**: `python -m aedile`
-
----
-
-## 11. API Reference: `aedile_consult`
-
-### Request Schema
-```json
-{
-  "proposed_plan": "Description of the functionality you want to build.",
-  "proposed_changes": [
-    {
-      "path": "src/domain/user.py",
-      "action": "modify",
-      "imports": ["src.infrastructure.db"]
-    }
-  ]
 }
 ```
 
-### Response Schema
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": "### 🛡️ Aedile Engineering Guidance Review\n\n#### 🔍 Codebase Reuse Opportunities...\n..."
-    }
-  ]
-}
-```
+### Cursor (`Settings ➔ Features ➔ MCP`)
+* **Name**: `aedile`
+* **Type**: `command`
+* **Command**: `python -m aedile`
+
+*See [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md) for more details.*
 
 ---
 
-## 12. Near-Term Roadmap
+## 5. Benchmarks
 
-### Version 1.1
-* Add support for TypeScript/JavaScript symbol parsing and index matching.
-* Support standard library mapping for Node.js, Go, and Rust.
+We measured the execution of backend engineering tasks (such as token authentication and endpoint refactoring) across multiple runs. Full parameters are documented in [results.json](benchmarks/results.json) and compiled in [BENCHMARKS.md](benchmarks/BENCHMARKS.md).
 
-### Version 1.2
-* Implement deep ast-based type checking in dry-run import verifications.
-* Support dependency checking for `package.json`, `go.mod`, and `Cargo.toml`.
-
-### Version 2.0
-* Local vector embedding support for advanced semantic similarity search.
+| Metric | Without Aedile | Prompt-Only Rules | With Aedile |
+| :--- | :---: | :---: | :---: |
+| **Reasoning Cost (Avg Tokens)** | 1,850 | 1,100 | **350** |
+| **Context Window Size (Tokens)** | 4,200 | 5,100 | **1,200** |
+| **Duplicate Code Written** | Yes | Yes | **No** |
+| **Tool Calls Executed** | 3 | 2 | **1** |
 
 ---
 
-## 13. FAQ
+## 6. Paradigm Comparison
 
-### Does Aedile send my code to remote servers?
-No. Aedile is 100% offline-first. All scanning, parsing, indexing, and verification logic runs locally on your machine.
+Aedile represents a shift in how codebase constraints are enforced:
 
-### How fast is the scan?
-Aedile uses file-hash increment caching. Scans on typical repositories complete in under 40ms, introducing zero editor lag.
+* **Static Prompting vs. Dynamic Context**: Static prompts (like `.cursorrules` text) decay and suffer from "prompt drift" in long sessions. Aedile queries real-time codebase symbols and active dependencies dynamically via a single MCP tool (`aedile_consult`).
+* **Post-Facto Linters vs. In-Plan Verification**: Traditional linters check imports after files are saved, failing in CI/CD. Aedile verifies planned imports in-memory before files are written, letting the model self-correct.
 
-### Can I customize the architectural layers?
-Yes. Layer hierarchies, forbidden cycles, and naming restrictions are configured in `aedile.toml`.
-
----
-
-## 14. Contributing
-
-We welcome contributions to Aedile! To set up a development environment:
-1. Clone the repository.
-2. Install dependencies: `pip install -e .[dev]`
-3. Run tests: `pytest`
+### Trade-offs & Limitations
+Aedile intentionally trades process startup latency (~100ms) for dynamic codebase verification. We optimized traversal by using SHA-256 increment caching, keeping scan times under 40ms. Symbol parsing is currently optimized for Python workspaces, with TypeScript/JavaScript support planned next.
 
 ---
 
-## 15. License
+## 7. Contributing
+
+We welcome contributions to Aedile. Please review our [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on code style, testing, and pull requests.
+
+---
+
+## 8. License
 
 Aedile is open-source software licensed under the [MIT License](LICENSE).
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=DietrichGebert/aedile&type=Date)](https://star-history.com/#DietrichGebert/aedile&Date)
