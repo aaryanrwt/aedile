@@ -1,51 +1,121 @@
-# Python cache and byte-code
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# ==============================================================================
+# Aedile - Production-Grade .gitignore
+# Matches best practices of Ruff, uv, FastAPI, and Requests.
+# ==============================================================================
 
-# Environments
-.env
-.venv
-env/
+# ------------------------------------------------------------------------------
+# Python Runtime & Caching
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ------------------------------------------------------------------------------
+# Virtual Environments
+# ------------------------------------------------------------------------------
+.venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
+/bin/
+/include/
+/lib/
+/lib64/
+/share/
+/local/
 
-# Project caches and tools
+# ------------------------------------------------------------------------------
+# Testing, Coverage & Static Analysis
+# ------------------------------------------------------------------------------
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.pyre/
+.tox/
+.nox/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
-.cache/
+nosetests.xml
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Build and distribution artifacts
-dist/
-build/
-*.egg-info/
-.eggs/
-
-# IDE and OS-specific files
+# ------------------------------------------------------------------------------
+# Editor & IDE Settings (VS Code, Cursor, JetBrains)
+# ------------------------------------------------------------------------------
 .idea/
 .vscode/
-*.swp
-*.swo
+.cursor/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.bak
+*.tmp
+
+# ------------------------------------------------------------------------------
+# Operating System Artifacts (macOS, Windows, Linux)
+# ------------------------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# Aedile-specific database, cache, and exports
-.aedile_cache
-.aedile_baseline.json
-aedile_report.html
-aedile_report.json
-aedile_report.sarif
-aedile_graph.mermaid
-aedile_graph.svg
-
-# Temp and logs
-logs/
+# ------------------------------------------------------------------------------
+# Environment Variables & Logs
+# ------------------------------------------------------------------------------
+.env
+.env.*
 *.log
-tmp/
-temp/
+
+# ------------------------------------------------------------------------------
+# Benchmarks, Profiling & Reports
+# ------------------------------------------------------------------------------
+benchmarks/generated/
+benchmarks/*.json.tmp
+benchmarks/*.html
+benchmarks/prof/
+*.prof
+*.flame
+reports/
+/reports/
+*.html
+
+# ------------------------------------------------------------------------------
+# Explicit Track Rules (Do NOT Ignore)
+# ------------------------------------------------------------------------------
+!README.md
+!LICENSE
+!SECURITY.md
+!CODE_OF_CONDUCT.md
+!CONTRIBUTING.md
+!docs/
+!benchmarks/results.json
+!images/logo.png
+!examples/
+!.github/
