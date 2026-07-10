@@ -1,0 +1,92 @@
+{
+  "system_info": {
+    "os": "Windows",
+    "os_release": "11",
+    "python_version": "3.14.3",
+    "processor": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel"
+  },
+  "tasks": {
+    "add_jwt_authentication": {
+      "runs": 10,
+      "without_aedile": {
+        "reasoning_tokens": {
+          "avg": 1855,
+          "median": 1865.0,
+          "std_dev": 60.23,
+          "min": 1750,
+          "max": 1940
+        },
+        "context_tokens": {
+          "avg": 4213,
+          "median": 4205.0,
+          "std_dev": 101.33,
+          "min": 4050,
+          "max": 4400
+        },
+        "avg_tool_calls": 3.2,
+        "duplicate_code_written": true,
+        "architecture_violations": 0
+      },
+      "with_aedile_consult": {
+        "reasoning_tokens": {
+          "avg": 349,
+          "median": 350.0,
+          "std_dev": 13.7,
+          "min": 330,
+          "max": 370
+        },
+        "context_tokens": {
+          "avg": 1200,
+          "median": 1200.0,
+          "std_dev": 18.26,
+          "min": 1170,
+          "max": 1230
+        },
+        "avg_tool_calls": 1.0,
+        "duplicate_code_written": false,
+        "architecture_violations": 0
+      }
+    },
+    "add_database_endpoint": {
+      "runs": 10,
+      "without_aedile": {
+        "reasoning_tokens": {
+          "avg": 1418,
+          "median": 1415.0,
+          "std_dev": 39.94,
+          "min": 1350,
+          "max": 1480
+        },
+        "context_tokens": {
+          "avg": 3808,
+          "median": 3805.0,
+          "std_dev": 91.87,
+          "min": 3650,
+          "max": 3950
+        },
+        "avg_tool_calls": 4.0,
+        "duplicate_code_written": false,
+        "architecture_violations": 1
+      },
+      "with_aedile_consult": {
+        "reasoning_tokens": {
+          "avg": 478,
+          "median": 480.0,
+          "std_dev": 15.49,
+          "min": 450,
+          "max": 500
+        },
+        "context_tokens": {
+          "avg": 1347,
+          "median": 1350.0,
+          "std_dev": 22.14,
+          "min": 1310,
+          "max": 1380
+        },
+        "avg_tool_calls": 1.0,
+        "duplicate_code_written": false,
+        "architecture_violations": 0
+      }
+    }
+  }
+}

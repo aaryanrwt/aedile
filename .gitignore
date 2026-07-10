@@ -1,0 +1,51 @@
+# Python cache and byte-code
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project caches and tools
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.cache/
+
+# Build and distribution artifacts
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# IDE and OS-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Aedile-specific database, cache, and exports
+.aedile_cache
+.aedile_baseline.json
+aedile_report.html
+aedile_report.json
+aedile_report.sarif
+aedile_graph.mermaid
+aedile_graph.svg
+
+# Temp and logs
+logs/
+*.log
+tmp/
+temp/

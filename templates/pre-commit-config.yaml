@@ -1,0 +1,11 @@
+# Pre-commit configuration to run Aedile checks locally before commits
+repos:
+  - repo: local
+    hooks:
+      - id: aedile-check
+        name: Aedile Architectural Guardrail Check
+        entry: aedile check
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true

@@ -1,0 +1,63 @@
+# Aedile Architecture Guardian Configuration
+
+[project]
+name = "Aedile"
+src_dirs = ["src"]
+exclude = [
+    "**/tests/**",
+    "**/examples/**",
+    "**/benchmarks/**",
+    "**/.venv/**",
+    "**/dist/**",
+    "**/build/**"
+]
+languages = ["python"]
+confidence_threshold = 0.7  # For probabilistic rules like duplicate detection
+
+[layers]
+# Declare layering order. Dependencies can only flow downwards (from left to right or top to bottom)
+# E.g., presentation -> application -> domain, infrastructure -> domain
+order = ["presentation", "application", "infrastructure", "domain", "shared"]
+
+[layers.mappings]
+presentation = ["**/cli/**", "**/ui/**"]
+application = ["**/core/scanner*", "**/core/inference*", "**/core/baseline*", "**/core/reporter*"]
+infrastructure = ["**/infrastructure/**"]
+domain = ["**/core/models*", "**/core/graph*", "**/core/rules/**", "**/core/parser*"]
+shared = ["**/shared/**"]
+
+[rules]
+cycle_detection = true
+layer_violations = true
+module_boundaries = true
+naming_conventions = true
+dead_code_detection = true
+duplicate_architecture = true
+
+[rules.naming]
+# Naming conventions enforced per component pattern
+[[rules.naming.patterns]]
+path_pattern = "**/cli/**"
+class_pattern = "^[A-Z][a-zA-Z0-9]*Command$"
+function_pattern = "^[a-z_][a-z0-9_]*$"
+file_pattern = "^[a-z_][a-z0-9_]*\\.py$"
+
+[[rules.naming.patterns]]
+path_pattern = "**/core/rules/**"
+class_pattern = "^[A-Z][a-zA-Z0-9]*Rule$"
+file_pattern = "^[a-z_][a-z0-9_]*\\.py$"
+
+[[rules.naming.patterns]]
+path_pattern = "**/shared/errors.py"
+class_pattern = "^[A-Z][a-zA-Z0-9]*Error$"
+
+[rules.boundaries]
+# Modules or folders prefixed with an underscore are private to their sibling modules
+private_prefixes = ["_"]
+# If a package contains a "public-api" folder or __all__, restrict other imports
+strict_boundaries = true
+
+[rules.duplicates]
+# Similarity threshold for duplicate structure detection
+similarity_threshold = 0.85
+min_file_size_bytes = 100
