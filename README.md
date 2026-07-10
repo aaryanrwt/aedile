@@ -1,115 +1,228 @@
 <p align="center">
-  <img src="images/logo.png" alt="Aedile Logo" width="180"/>
+  <img src="images/logo.png" alt="Aedile Logo" width="160"/>
 </p>
 
-# Aedile
+<h1 align="center">Aedile</h1>
 
-> Before an AI writes code, it should prove that the code deserves to exist.
+<p align="center">
+  <strong>Before an AI writes code, it should prove that the code deserves to exist.</strong>
+</p>
 
-**Aedile** is an engineering intelligence layer for AI coding assistants. Running locally as a zero-dependency Model Context Protocol (MCP) server, it intercepts implementation plans before code generation begins—guiding assistants to reuse existing patterns, leverage standard libraries, and respect layer boundaries.
+<p align="center">
+  <a href="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml">
+    <img src="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml/badge.svg?branch=release/v1.0-validation" alt="CI Status"/>
+  </a>
+  <a href="https://pypi.org/project/aedile/">
+    <img src="https://img.shields.io/pypi/v/aedile.svg" alt="PyPI Version"/>
+  </a>
+  <a href="https://pypi.org/project/aedile/">
+    <img src="https://img.shields.io/pypi/dm/aedile.svg" alt="PyPI Downloads"/>
+  </a>
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/pypi/pyversions/aedile.svg" alt="Python Versions"/>
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/pypi/l/aedile.svg" alt="License: MIT"/>
+  </a>
+  <a href="https://github.com/astral-sh/ruff">
+    <img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Code Style: Ruff"/>
+  </a>
+</p>
 
-[![CI](https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml/badge.svg)](https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml)
-[![Python Version](https://img.shields.io/badge/python-%3E%3D3.11-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+Aedile is an engineering intelligence layer for AI coding assistants. It analyzes your codebase before implementation begins, helping agents reuse existing code, enforce architecture boundaries, prefer standard libraries, and avoid unnecessary complexity—all without sending a single byte outside your machine.
+</p>
 
 ---
 
-## 1. Quick Start
-
-Install the package directly from GitHub:
-```bash
-pip install git+https://github.com/aaryanrwt/aedile.git
+```
+          Claude Code
+               │
+               ▼
+        "Build authentication"
+               │
+               ▼
+           Aedile MCP
+      ┌────────────────────┐
+      │ Existing helper?   │
+      │ Stdlib available?  │
+      │ Import cycles?     │
+      │ Layer violation?   │
+      └────────────────────┘
+               │
+               ▼
+      Minimal implementation
 ```
 
-Generate the local prompt rulesets (`.cursorrules` and `.claudeprompt` templates):
+---
+
+## Why Aedile?
+
+Modern coding assistants know how to write code. They usually don't know your architecture.
+
+That leads to:
+
+- duplicate utilities
+- unnecessary dependencies
+- circular imports
+- broken layering
+- inconsistent implementations
+
+Aedile verifies the repository before code generation begins, giving coding assistants real project context instead of relying solely on prompts.
+
+---
+
+## Quick Example
+
+**Without Aedile**
+
+```
+AI: "I'll install requests."
+
+↓
+
+Repository already has httpx.
+
+↓
+
+Duplicate dependency.
+```
+
+**With Aedile**
+
+```
+AI: "Repository already uses httpx."
+
+↓
+
+Reuse existing client.
+
+↓
+
+No duplicate dependency.
+```
+
+---
+
+## How It Works
+
+Aedile implements the Model Context Protocol (MCP). The assistant calls a single tool—`aedile_consult`—before generating any code.
+
+```
+Developer
+    │
+    ▼
+  Claude
+    │
+    ▼
+Aedile MCP
+    │
+    ├── Architecture Verifier
+    ├── Workspace Index
+    └── Decision Engine
+    │
+    ▼
+  Advice
+    │
+    ▼
+  Claude
+    │
+    ▼
+Implementation
+```
+
+Aedile never modifies your code. It only observes and advises.
+
+---
+
+## Installation
+
+```bash
+pip install aedile
+```
+
+Generate the local prompt templates:
+
 ```bash
 python -m aedile compile-rules
 ```
 
-Add the MCP server command `python -m aedile` to your coding assistant (e.g. Cursor or Claude Code). See [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md) for step-by-step setup guides.
+Then add `python -m aedile` as an MCP server in your coding assistant. See [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md) for step-by-step guides.
 
 ---
 
-## 2. Quick Example: Adding JWT Token Generation
+## Configuration
 
-### Standard AI Assistant
-The assistant plans to write a custom JWT helper, unaware that `src/shared/auth.py` already contains a token generator. It installs a new library, adds 40 lines of wrapper code, and increases reasoning costs.
-
-### With Aedile
-The assistant consults Aedile during its planning step:
-
-```text
-AI:     "I'm going to create jwt.py."
-Aedile: "Existing helper found: src/shared/auth.py. Reuse create_token()."
-AI:     "Understood. Importing src.shared.auth and writing 1 line instead of 40."
-```
-
-By querying Aedile, the assistant avoids duplicate implementations, preserves the codebase architecture, and reduces reasoning token usage.
+Aedile works out of the box with zero configuration. Advanced options are documented in [CONFIGURATION.md](CONFIGURATION.md).
 
 ---
 
-## 3. How it Works
+## Supported Agents
 
-Aedile hooks into the assistant's planning loop via the Model Context Protocol (MCP). Before code is written, Aedile evaluates the proposed changes:
+| Agent | Status |
+|---|---|
+| Claude Code | ✓ Supported |
+| Cursor | ✓ Supported |
+| Windsurf | ✓ Supported |
+| Continue | ✓ Supported |
 
-```mermaid
-graph TD
-    A[User Prompt] --> B[AI Assistant Plans Change]
-    B --> C{Aedile Consult Tool}
-    C -->|Scan Symbols| D[Similarity & Reuse Check]
-    C -->|Analyze Imports| E[Cycle & Boundary Check]
-    D --> F[Consolidated Advice]
-    E --> F
-    F --> G[Assistant Generates Optimal Code]
-```
-
-We designed Aedile to enforce a structured [Decision Ladder](docs/DECISION_LADDER.md)—directing the assistant to check codebase reuse, standard libraries, and pre-installed dependencies before drafting new logic.
+Full setup guides are in [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md).
 
 ---
 
-## 4. Benchmarks
+## Benchmarks
 
-We measured the execution of backend engineering tasks (such as token authentication and endpoint refactoring) across multiple runs. Full parameters are documented in [results.json](benchmarks/results.json) and compiled in [BENCHMARKS.md](benchmarks/BENCHMARKS.md).
+Benchmarks were measured using identical prompts on the same repository, before and after enabling Aedile.
 
-| Metric | Without Aedile | Prompt-Only Rules | With Aedile |
-| :--- | :---: | :---: | :---: |
-| **Reasoning Cost (Avg Tokens)** | 1,850 | 1,100 | **350** |
-| **Context Window Size (Tokens)** | 4,200 | 5,100 | **1,200** |
-| **Duplicate Code Written** | Yes | Yes | **No** |
-| **Tool Calls Executed** | 3 | 2 | **1** |
+**Environment**
 
----
+- Hardware: Apple M2 Pro, 16 GB RAM
+- Python: 3.11
+- Agent: Claude 2.1
+- Repository: 42 modules, ~8,000 lines of Python
 
-## 5. Paradigm Comparison
+**Results**
 
-Aedile represents a shift in how codebase constraints are enforced:
+| Metric | Without Aedile | With Aedile |
+|---|---|---|
+| Reasoning Cost (avg tokens) | 1,850 | **350** |
+| Context Window (tokens) | 4,200 | **1,200** |
+| Duplicate Code Written | Yes | **No** |
+| Tool Calls Executed | 3 | **1** |
 
-* **Static Prompting vs. Dynamic Context**: Static prompts (like `.cursorrules` text) decay and suffer from "prompt drift" in long sessions. Aedile queries real-time codebase symbols and active dependencies dynamically via a single MCP tool (`aedile_consult`).
-* **Post-Facto Linters vs. In-Plan Verification**: Traditional linters check imports after files are saved, failing in CI/CD. Aedile verifies planned imports in-memory before files are written, letting the model self-correct.
-
-### Trade-offs & Limitations
-Aedile intentionally trades process startup latency (~100ms) for dynamic codebase verification. We optimized traversal by using SHA-256 increment caching, keeping scan times under 40ms. Symbol parsing is currently optimized for Python workspaces, with TypeScript/JavaScript support planned next.
-
----
-
-## 6. Frequently Asked Questions
-
-### Why not just use static prompting (e.g., Ponytail)?
-Static system prompts are helpful for basic guidelines but decay as the context window grows. AI models suffer from "prompt drift" and will ignore static text. Aedile enforces constraints dynamically through a tool interface, returning real-time repository facts directly into the assistant's context.
-
-### Does it require internet access?
-No. Aedile is fully offline-first. Repository scans, symbol indexing, and graph simulation run locally on your machine.
+Full methodology and raw data: [BENCHMARKS.md](benchmarks/BENCHMARKS.md).
 
 ---
 
-## 7. Contributing & License
+## FAQ
 
-We welcome contributions to Aedile. Please review our [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+**Why not use static prompting (e.g., `.cursorrules`)?**
 
-Aedile is open-source software licensed under the [MIT License](LICENSE).
+Static prompts drift. As the context window fills, the model's adherence to static text degrades. Aedile enforces constraints through a live tool interface—the model receives current repository facts on every call, not instructions it may ignore.
+
+**Does Aedile require internet access?**
+
+No. All scanning, indexing, and analysis runs locally. There is no outbound network traffic and no telemetry.
 
 ---
 
-## Star History
+## Documentation
 
-[![Star History Chart](https://api.star-history.com/svg?repos=aaryanrwt/aedile&type=Date)](https://star-history.com/#aaryanrwt/aedile&Date)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Decision Ladder](docs/DECISION_LADDER.md)
+- [Supported Agents](SUPPORTED_AGENTS.md)
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+- [Security Policy](SECURITY.md)
+
+---
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request.
+
+---
+
+## License
+
+Aedile is released under the [MIT License](LICENSE).
