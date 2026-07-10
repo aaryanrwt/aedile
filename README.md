@@ -128,7 +128,7 @@ We compared the execution of identical backend engineering tasks (Adding authent
 
 All parameters (model settings, agent versions, runs per task, and repository configuration) are fully documented and reproducible. See the raw stats in [results.json](file:///c:/Users/Aaryan%20Rawat/Documents/Aedile/benchmarks/results.json) and the compiled report in [BENCHMARKS.md](file:///c:/Users/Aaryan%20Rawat/Documents/Aedile/benchmarks/BENCHMARKS.md) for the complete benchmark suite.
 
-| Metric | Without Aedile | With Ponytail | With Aedile |
+| Metric | Without Aedile | Prompt-Only Rules | With Aedile |
 | :--- | :--- | :--- | :--- |
 | **Reasoning Cost (Avg Tokens)** | 1,850 | 1,100 | **350** |
 | **Context Window Size (Tokens)** | 4,200 | 5,100 | **1,200** |
@@ -142,9 +142,10 @@ All parameters (model settings, agent versions, runs per task, and repository co
 
 Aedile is designed to be **different**, not just better.
 
-* **Aedile vs. Ponytail**: Ponytail is a static system prompt. Over long coding turns, LLMs experience "prompt drift" and bypass static instructions. Aedile is an active MCP server: it dynamically scans your repository and forces compliance through structured tool outputs.
+* **Aedile vs. Static Prompting (e.g. Ponytail)**: Static system instructions suffer from "prompt drift" and decay in long sessions as the context window grows. Aedile enforces constraints dynamically via standard JSON-RPC tool calls, feeding real-time workspace facts to the agent.
 * **Aedile vs. Import Linter / Deptrac**: Most architecture tools validate code after it exists. Aedile validates the implementation plan before code is written, guiding the AI model to correct course interactively.
 * **Aedile vs. CodeQL / SonarQube**: These are heavyweight, out-of-loop scanning platforms. Aedile runs locally, requires zero configuration, and completes scans in under 40ms.
+
 
 ---
 
