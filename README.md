@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml">
-    <img src="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/>
+    <img src="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml/badge.svg" alt="CI"/>
   </a>
   <a href="https://pypi.org/project/aedile/">
     <img src="https://img.shields.io/pypi/v/aedile.svg" alt="PyPI Version"/>
