@@ -19,7 +19,10 @@ class NamingPattern:
         self.function_pattern = function_pattern
         self.file_pattern = file_pattern
 
-        # Precompile patterns to validate regex
+        # Precompile patterns to validate regex (bounded length to mitigate ReDoS)
+        for pat in (class_pattern, function_pattern, file_pattern):
+            if pat and len(pat) > 512:
+                raise ConfigError("Naming regex pattern exceeds maximum length of 512 characters")
         self._class_re = re.compile(class_pattern) if class_pattern else None
         self._func_re = re.compile(function_pattern) if function_pattern else None
         self._file_re = re.compile(file_pattern) if file_pattern else None
@@ -42,6 +45,7 @@ class Config:
         self.exclude: list[str] = []
         self.languages: list[str] = ["python"]
         self.confidence_threshold: float = 0.7
+        self.allow_plugins: bool = False
 
         # Layers
         self.layer_order: list[str] = []
@@ -92,6 +96,7 @@ class Config:
         self.exclude = project.get("exclude", self.exclude)
         self.languages = project.get("languages", self.languages)
         self.confidence_threshold = project.get("confidence_threshold", self.confidence_threshold)
+        self.allow_plugins = bool(project.get("allow_plugins", self.allow_plugins))
 
         # Parse layers
         layers = data.get("layers", {})

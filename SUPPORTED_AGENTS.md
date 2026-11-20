@@ -1,14 +1,29 @@
 # Supported Agents & Environments
 
-Aedile is designed to be agent-agnostic. It communicates using standard input/output (stdio) JSON-RPC 2.0 frames over the Model Context Protocol (MCP). Any assistant or editor supporting MCP can integrate with Aedile.
+Aedile runs locally over stdio JSON-RPC 2.0 (Model Context Protocol) and supports `SessionStart` / `SubagentStart` lifecycle hooks.
 
 ---
 
-## 1. Claude Code
+## 1. One-Command Setup (Recommended)
 
-Aedile runs directly inside Claude Code's terminal sessions. 
+Run inside your repository to register Aedile MCP and lifecycle hooks idempotently (creates `.aedile.bak` backups):
 
-To configure, edit your Claude Code settings at `~/.claude/settings.json`:
+```bash
+aedile setup
+```
+
+Preview planned changes without writing files:
+
+```bash
+aedile setup --dry-run
+```
+
+---
+
+## 2. Manual Configuration
+
+### Claude Code
+`aedile setup` writes `.mcp.json` and `.claude/settings.local.json` with `SessionStart` (`aedile map`) and `SubagentStart` (`aedile map --budget 1200`) hooks. For global user settings (`~/.claude/settings.json`):
 
 ```json
 {
@@ -21,42 +36,18 @@ To configure, edit your Claude Code settings at `~/.claude/settings.json`:
 }
 ```
 
----
+### Cursor
+`aedile setup` writes `.cursor/mcp.json`. You can also compile `.cursorrules` with:
 
-## 2. Cursor
-
-Cursor supports stdio MCP configurations natively.
-
-1. Navigate to **Settings ➔ Features ➔ MCP**.
-2. Click **+ Add New MCP Server**.
-3. Configure:
-   * **Name**: `aedile`
-   * **Type**: `command`
-   * **Command**: `python -m aedile`
-
----
-
-## 3. Windsurf
-
-Windsurf supports MCP servers configured via its `mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "aedile": {
-      "command": "python",
-      "args": ["-m", "aedile"]
-    }
-  }
-}
+```bash
+aedile compile-rules
 ```
 
----
+### Windsurf / Copilot / Gemini CLI / Codex / Other MCP Hosts
+Point any MCP-compatible host to:
 
-## 4. Other Agents (Devin, OpenCode, Antigravity)
-
-For generic agents, invoke the server as a background subprocess using the command:
 ```bash
 python -m aedile
 ```
-The agent should direct its JSON-RPC messages to `stdin` and read responses from `stdout`. All system logging and diagnostic information is routed to `stderr` to avoid corrupting the communication channel.
+
+All JSON-RPC traffic uses `stdin`/`stdout`; diagnostics go to `stderr`.

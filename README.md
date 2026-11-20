@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/logo.png" alt="Aedile Logo" width="160"/>
+  <img src="images/logo.jpg" alt="Aedile Mascot Logo" width="200"/>
 </p>
 
 <h1 align="center">Aedile</h1>
@@ -10,19 +10,16 @@
 
 <p align="center">
   <a href="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml">
-    <img src="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml/badge.svg?branch=release/v1.0-validation" alt="CI Status"/>
+    <img src="https://github.com/aaryanrwt/aedile/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/>
   </a>
   <a href="https://pypi.org/project/aedile/">
     <img src="https://img.shields.io/pypi/v/aedile.svg" alt="PyPI Version"/>
   </a>
-  <a href="https://pypi.org/project/aedile/">
-    <img src="https://img.shields.io/pypi/dm/aedile.svg" alt="PyPI Downloads"/>
-  </a>
   <a href="https://www.python.org/">
-    <img src="https://img.shields.io/pypi/pyversions/aedile.svg" alt="Python Versions"/>
+    <img src="https://img.shields.io/badge/python-3.11%20--%203.15-blue.svg" alt="Python Versions"/>
   </a>
   <a href="https://opensource.org/licenses/MIT">
-    <img src="https://img.shields.io/pypi/l/aedile.svg" alt="License: MIT"/>
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/>
   </a>
   <a href="https://github.com/astral-sh/ruff">
     <img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Code Style: Ruff"/>
@@ -30,28 +27,28 @@
 </p>
 
 <p align="center">
-Aedile is an engineering intelligence layer for AI coding assistants. It analyzes your codebase before implementation begins, helping agents reuse existing code, enforce architecture boundaries, prefer standard libraries, and avoid unnecessary complexity—all without sending a single byte outside your machine.
+Aedile is an engineering intelligence layer for AI coding assistants. It parses your repository into a live AST and dependency graph before code generation begins—surfacing existing helpers, enforcing layer boundaries, catching circular imports, and preferring standard libraries—all locally with zero external dependencies.
 </p>
 
 ---
 
-```
-          Claude Code
+```text
+          Coding Agent
                │
                ▼
-        "Build authentication"
+        "Build auth helper"
                │
                ▼
            Aedile MCP
-      ┌────────────────────┐
-      │ Existing helper?   │
-      │ Stdlib available?  │
-      │ Import cycles?     │
-      │ Layer violation?   │
-      └────────────────────┘
+      ┌──────────────────────────┐
+      │ Existing symbol? (BM25)  │
+      │ Stdlib / declared dep?   │
+      │ Tarjan import cycle?     │
+      │ Layer / delete hazard?   │
+      └──────────────────────────┘
                │
                ▼
-      Minimal implementation
+   Verified, minimal implementation
 ```
 
 ---
@@ -60,15 +57,14 @@ Aedile is an engineering intelligence layer for AI coding assistants. It analyze
 
 Modern coding assistants know how to write code. They usually don't know your architecture.
 
-That leads to:
+Static prompt rules drift as the context window fills, and regex-only maps miss nested definitions, import graphs, and layer boundaries. That leads to:
 
 - duplicate utilities
-- unnecessary dependencies
+- unnecessary third-party dependencies
 - circular imports
-- broken layering
-- inconsistent implementations
+- broken layer boundaries and dangling deletions
 
-Aedile verifies the repository before code generation begins, giving coding assistants real project context instead of relying solely on prompts.
+Aedile verifies the repository deterministically before code is written, giving coding assistants real AST and graph facts instead of relying on prompts alone.
 
 ---
 
@@ -76,133 +72,93 @@ Aedile verifies the repository before code generation begins, giving coding assi
 
 **Without Aedile**
 
-```
-AI: "I'll install requests."
-
+```text
+AI: "I'll add a new cycle detector and install a helper."
 ↓
-
-Repository already has httpx.
-
+Repository already has ArchitectureGraph.find_all_cycles() and tomllib.
 ↓
-
-Duplicate dependency.
+Duplicate logic + extra dependency.
 ```
 
 **With Aedile**
 
-```
-AI: "Repository already uses httpx."
-
+```text
+Aedile [Observed: AST/Graph]:
+  "Reuse ArchitectureGraph.find_all_cycles() in src/aedile/core/graph.py:L49."
+  "ARCHITECTURAL VIOLATION: importing cli from shared violates layer order."
 ↓
-
-Reuse existing client.
-
-↓
-
-No duplicate dependency.
+AI reuses the existing method and respects layer boundaries.
 ```
 
 ---
 
 ## How It Works
 
-Aedile implements the Model Context Protocol (MCP). The assistant calls a single tool—`aedile_consult`—before generating any code.
+Aedile runs locally as a 6-tool Model Context Protocol (MCP) server and standalone CLI:
 
-```
-Developer
-    │
-    ▼
-  Claude
-    │
-    ▼
-Aedile MCP
-    │
-    ├── Architecture Verifier
-    ├── Workspace Index
-    └── Decision Engine
-    │
-    ▼
-  Advice
-    │
-    ▼
-  Claude
-    │
-    ▼
-Implementation
-```
-
-Aedile never modifies your code. It only observes and advises.
+1. **Session Map (`aedile map`)**: Emits a token-budgeted, AST-verified symbol & layer map at session start (`shared`/`core`/`util` first).
+2. **Pre-Edit Consultation (`aedile_consult` / `aedile_verify_architecture`)**: Runs BM25/IDF symbol reuse search, `tomllib` dependency checks, and in-memory `add`/`modify`/`delete` graph simulation.
+3. **Blast-Radius Review & Debt (`aedile review` / `aedile debt`)**: Traces transitive dependents outside the diff and tracks `# shortcut:` / `# aedile-waive:` debt markers.
+4. **CI Gate (`aedile check`)**: Zero-config layer inference, `.aedile/baseline.json` regression tracking, SARIF 2.1.0, and self-contained HTML dashboards.
 
 ---
 
-## Installation
+## Install & Setup
 
 ```bash
 pip install aedile
 ```
 
-Generate the local prompt templates:
+Configure MCP servers and `SessionStart` / `SubagentStart` hooks automatically for your local agents (creates `.aedile.bak` backups):
 
 ```bash
-python -m aedile compile-rules
+aedile setup
 ```
 
-Then add `python -m aedile` as an MCP server in your coding assistant. See [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md) for step-by-step guides.
+Or run `aedile setup --dry-run` to preview changes first. See [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md) for manual configs.
 
 ---
 
-## Configuration
+## Commands & MCP Tools
 
-Aedile works out of the box with zero configuration. Advanced options are documented in [CONFIGURATION.md](CONFIGURATION.md).
-
----
-
-## Supported Agents
-
-| Agent | Status |
-|---|---|
-| Claude Code | ✓ Supported |
-| Cursor | ✓ Supported |
-| Windsurf | ✓ Supported |
-| Continue | ✓ Supported |
-
-Full setup guides are in [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md).
-
----
-
-## Benchmarks
-
-Benchmarks were measured using identical prompts on the same repository, before and after enabling Aedile.
-
-**Environment**
-
-- Hardware: Apple M2 Pro, 16 GB RAM
-- Python: 3.11
-- Agent: Claude 2.1
-- Repository: 42 modules, ~8,000 lines of Python
-
-**Results**
-
-| Metric | Without Aedile | With Aedile |
+| CLI Command | MCP Tool | What it does |
 |---|---|---|
-| Reasoning Cost (avg tokens) | 1,850 | **350** |
-| Context Window (tokens) | 4,200 | **1,200** |
-| Duplicate Code Written | Yes | **No** |
-| Tool Calls Executed | 3 | **1** |
+| `aedile` | `aedile_consult` | Start MCP server / consult reuse, stdlib, deps & pre-edit checks |
+| — | `aedile_verify_architecture` | Simulate `add` / `modify` / `delete` changes before writing files |
+| `aedile map` | `aedile_map` | Emit token-budgeted AST symbol & layer map |
+| `aedile graph` | `aedile_graph` | Export Mermaid/SVG dependency graph or query module blast radius |
+| `aedile review` | `aedile_review` | Caller-aware blast-radius review ranked Must / Should / Nice to have |
+| `aedile debt` | `aedile_debt` | Harvest `# shortcut:` / `# aedile-waive:` debt ledger |
+| `aedile check` | — | Full-repo CI gate (`text`, `json`, `sarif`, `html`) with `--baseline` |
+| `aedile mode` | — | Set intensity mode (`lite`, `full`, `ultra`, `off`) |
+| `aedile board` | — | Show local reuse & token-savings telemetry or export HTML board |
 
-Full methodology and raw data: [BENCHMARKS.md](benchmarks/BENCHMARKS.md).
+---
+
+## Benchmarks (Real Local Run)
+
+Measured side-by-side on local **`qwen3:4b`** via Ollama (`Python 3.15.2`, `temperature=0.0`, `num_predict=160`) across **12 engineering prompts** (reuse, stdlib, layer violations, import cycles, file deletion, blast radius, debt ledger):
+
+| Metric | Ponytail (`AGENTS.md` + `ponytail-map.js`) | Aedile (`aedile map` + `aedile_consult`) |
+| :--- | :---: | :---: |
+| **LLM Response Hit Rate** | 2/12 (16.7%) | **10/12 (83.3%)** |
+| **Deterministic Tool Guarantee** | 0/12 (no AST/graph tool) | **11/12 (91.7%)** |
+| **Avg Prompt Tokens** | 794.6 | **752.8** |
+
+Full methodology, per-prompt tables, and game-generation benchmarks: [benchmarks/BENCHMARKS.md](benchmarks/BENCHMARKS.md) and [benchmarks/GAME_BENCHMARK_AND_AUDIT.md](benchmarks/GAME_BENCHMARK_AND_AUDIT.md).
 
 ---
 
 ## FAQ
 
-**Why not use static prompting (e.g., `.cursorrules`)?**
+**Does Aedile require internet access or API keys?**
+No. All AST parsing, graph simulation, caching, and telemetry stay 100% local on your machine.
 
-Static prompts drift. As the context window fills, the model's adherence to static text degrades. Aedile enforces constraints through a live tool interface—the model receives current repository facts on every call, not instructions it may ignore.
+**Which languages and Python versions are supported?**
+Python `3.11–3.15` (including PEP 810 `lazy import` cycle awareness) is built-in via stdlib `ast`, alongside zero-dependency structural parsers for TypeScript/JavaScript, Go, and Rust.
 
-**Does Aedile require internet access?**
-
-No. All scanning, indexing, and analysis runs locally. There is no outbound network traffic and no telemetry.
+**How do I adopt Aedile on a legacy repo without fixing everything at once?**
+Run `aedile check --update-baseline`, then gate CI with `aedile check --baseline` so only *new* architectural regressions fail the build.
 
 ---
 
@@ -210,19 +166,17 @@ No. All scanning, indexing, and analysis runs locally. There is no outbound netw
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Decision Ladder](docs/DECISION_LADDER.md)
+- [Competitor Comparison](docs/COMPETITORS.md)
+- [FAQ](docs/FAQ.md)
 - [Supported Agents](SUPPORTED_AGENTS.md)
-- [Changelog](CHANGELOG.md)
 - [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)
 - [Security Policy](SECURITY.md)
 
 ---
 
-## Contributing
+## Contributing & License
 
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request.
-
----
-
-## License
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 Aedile is released under the [MIT License](LICENSE).

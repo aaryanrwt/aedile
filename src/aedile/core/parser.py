@@ -73,9 +73,11 @@ class PythonParser(BaseParser):
         except Exception as e:
             raise ParserError(f"Failed to read file {filepath}: {e}")
 
-        # Compute file hash and size
+        # Compute file hash, size, and mtime_ns
         file_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
-        file_size = os.path.getsize(filepath)
+        stat = os.stat(filepath)
+        file_size = stat.st_size
+        mtime_ns = stat.st_mtime_ns
         relative_path = os.path.relpath(filepath, project_root).replace(os.sep, "/")
 
         # Compute source module name for relative import resolution
@@ -94,6 +96,7 @@ class PythonParser(BaseParser):
 
         class ASTVisitor(ast.NodeVisitor):
             def visit_Import(self, node: ast.Import) -> None:
+                is_lazy = bool(getattr(node, "is_lazy", 0))
                 for alias in node.names:
                     imports.append(
                         Import(
@@ -102,12 +105,14 @@ class PythonParser(BaseParser):
                             line=node.lineno,
                             alias=alias.asname,
                             is_relative=False,
+                            is_lazy=is_lazy,
                         )
                     )
                 self.generic_visit(node)
 
             def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
                 is_relative = node.level > 0
+                is_lazy = bool(getattr(node, "is_lazy", 0))
                 imported_module = node.module or ""
 
                 # Resolve relative import
@@ -125,9 +130,19 @@ class PythonParser(BaseParser):
                         names=names,
                         line=node.lineno,
                         is_relative=is_relative,
+                        is_lazy=is_lazy,
                     )
                 )
                 self.generic_visit(node)
+
+            def _format_sig(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+                args = [a.arg for a in node.args.posonlyargs + node.args.args + node.args.kwonlyargs]
+                if node.args.vararg:
+                    args.append(f"*{node.args.vararg.arg}")
+                if node.args.kwarg:
+                    args.append(f"**{node.args.kwarg.arg}")
+                ret = f" -> {ast.unparse(node.returns)}" if node.returns else ""
+                return f"({', '.join(args)}){ret}"
 
             def visit_ClassDef(self, node: ast.ClassDef) -> None:
                 docstring = ast.get_docstring(node)
@@ -141,12 +156,23 @@ class PythonParser(BaseParser):
                         is_private=node.name.startswith("_"),
                     )
                 )
+                for item in node.body:
+                    if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        symbols.append(
+                            Symbol(
+                                name=item.name,
+                                kind="method",
+                                line=item.lineno,
+                                end_line=getattr(item, "end_lineno", item.lineno),
+                                docstring=ast.get_docstring(item),
+                                is_private=item.name.startswith("_"),
+                                signature=self._format_sig(item),
+                                parent_name=node.name,
+                            )
+                        )
                 self.generic_visit(node)
 
             def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-                # Do not record nested functions as module symbols
-                # We can check parent node types or just process all functions
-                # but architectural components are usually top-level
                 is_toplevel = (
                     isinstance(getattr(node, "parent", None), ast.Module) or node.col_offset == 0
                 )
@@ -160,6 +186,7 @@ class PythonParser(BaseParser):
                             end_line=getattr(node, "end_lineno", node.lineno),
                             docstring=docstring,
                             is_private=node.name.startswith("_"),
+                            signature=self._format_sig(node),
                         )
                     )
                 self.generic_visit(node)
@@ -178,6 +205,35 @@ class PythonParser(BaseParser):
                             end_line=getattr(node, "end_lineno", node.lineno),
                             docstring=docstring,
                             is_private=node.name.startswith("_"),
+                            signature=self._format_sig(node),
+                        )
+                    )
+                self.generic_visit(node)
+
+            def visit_Assign(self, node: ast.Assign) -> None:
+                if isinstance(getattr(node, "parent", None), ast.Module):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id.isupper() and len(target.id) > 1:
+                            symbols.append(
+                                Symbol(
+                                    name=target.id,
+                                    kind="constant",
+                                    line=node.lineno,
+                                    end_line=getattr(node, "end_lineno", node.lineno),
+                                    is_private=target.id.startswith("_"),
+                                )
+                            )
+                self.generic_visit(node)
+
+            def visit_TypeAlias(self, node: ast.TypeAlias) -> None:
+                if isinstance(getattr(node, "parent", None), ast.Module):
+                    symbols.append(
+                        Symbol(
+                            name=node.name.id,
+                            kind="type_alias",
+                            line=node.lineno,
+                            end_line=getattr(node, "end_lineno", node.lineno),
+                            is_private=node.name.id.startswith("_"),
                         )
                     )
                 self.generic_visit(node)
@@ -198,6 +254,7 @@ class PythonParser(BaseParser):
             language="python",
             imports=imports,
             symbols=symbols,
+            mtime_ns=mtime_ns,
         )
 
 
@@ -221,9 +278,9 @@ class LanguageDetector:
 def os_path_root(filepath: str, relative_path: str) -> str:
     """Computes the project root given absolute filepath and relative path.
     Example:
-      filepath: C:/Users/Aaryan/Aedile/src/main.py
+      filepath: /workspace/project/src/main.py
       relative_path: src/main.py
-      returns: C:/Users/Aaryan/Aedile
+      returns: /workspace/project
     """
     abs_file = filepath.replace("\\", "/")
     rel_file = relative_path.replace("\\", "/")

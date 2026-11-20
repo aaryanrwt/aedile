@@ -1,0 +1,41 @@
+{
+  "model": "qwen3:4b",
+  "modules": {
+    "ludo_engine": {
+      "ponytail": {
+        "prompt_tokens": 120,
+        "output_tokens": 1400,
+        "elapsed_s": 35.89,
+        "loc": 77,
+        "ast_valid": false,
+        "ast_error": "L8: unterminated string literal (detected at line 8)"
+      },
+      "aedile": {
+        "prompt_tokens": 526,
+        "output_tokens": 1400,
+        "elapsed_s": 28.28,
+        "loc": 69,
+        "ast_valid": false,
+        "ast_error": "L1: unterminated string literal (detected at line 1)"
+      }
+    },
+    "ludo_ui": {
+      "ponytail": {
+        "prompt_tokens": 94,
+        "output_tokens": 1400,
+        "elapsed_s": 27.77,
+        "loc": 63,
+        "ast_valid": false,
+        "ast_error": "L3: invalid decimal literal"
+      },
+      "aedile": {
+        "prompt_tokens": 498,
+        "output_tokens": 1400,
+        "elapsed_s": 28.4,
+        "loc": 107,
+        "ast_valid": false,
+        "ast_error": "L1: unterminated string literal (detected at line 1)"
+      }
+    }
+  }
+}

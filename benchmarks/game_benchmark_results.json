@@ -1,0 +1,97 @@
+{
+  "model": "qwen3:4b",
+  "games": {
+    "snake": {
+      "ponytail": {
+        "file": "games/ponytail/snake.html",
+        "prompt_tokens": 697,
+        "output_tokens": 2200,
+        "elapsed_s": 45.08,
+        "audit": {
+          "loc": 66,
+          "bytes": 3859,
+          "has_canvas": false,
+          "js_syntax_ok": false,
+          "js_error": "<temp>/tmp.js:1\n\". So the entire code must be in one file, no external files.\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nSyntaxError: Invalid ",
+          "has_loop": true,
+          "has_controls": false,
+          "has_collision": true,
+          "has_score": true,
+          "has_restart": true,
+          "has_visuals": false,
+          "checks_passed": 5,
+          "checks_total": 9,
+          "playable": false
+        }
+      },
+      "aedile": {
+        "file": "games/aedile/snake.html",
+        "prompt_tokens": 524,
+        "output_tokens": 2200,
+        "elapsed_s": 45.14,
+        "audit": {
+          "loc": 28,
+          "bytes": 1511,
+          "has_canvas": true,
+          "js_syntax_ok": true,
+          "js_error": "",
+          "has_loop": true,
+          "has_controls": false,
+          "has_collision": true,
+          "has_score": true,
+          "has_restart": true,
+          "has_visuals": false,
+          "checks_passed": 7,
+          "checks_total": 9,
+          "playable": false
+        }
+      }
+    },
+    "dino": {
+      "ponytail": {
+        "file": "games/ponytail/dino.html",
+        "prompt_tokens": 696,
+        "output_tokens": 2200,
+        "elapsed_s": 45.0,
+        "audit": {
+          "loc": 49,
+          "bytes": 3498,
+          "has_canvas": false,
+          "js_syntax_ok": false,
+          "js_error": "<temp>/tmp.js:1\n(no placeholders or TODOs)\". So the code must be self-contained.\n    ^^^^^^^^^^^^\n\nSyntaxError: Unexpected identifier 'placeholders'\n    at wrapSa",
+          "has_loop": false,
+          "has_controls": false,
+          "has_collision": true,
+          "has_score": true,
+          "has_restart": true,
+          "has_visuals": false,
+          "checks_passed": 4,
+          "checks_total": 9,
+          "playable": false
+        }
+      },
+      "aedile": {
+        "file": "games/aedile/dino.html",
+        "prompt_tokens": 523,
+        "output_tokens": 2200,
+        "elapsed_s": 61.42,
+        "audit": {
+          "loc": 54,
+          "bytes": 3552,
+          "has_canvas": false,
+          "js_syntax_ok": false,
+          "js_error": "<temp>/tmp.js:1\n(no placeholders or TODOs)\". So I need to code all that.\n    ^^^^^^^^^^^^\n\nSyntaxError: Unexpected identifier 'placeholders'\n    at wrapSafe (node",
+          "has_loop": false,
+          "has_controls": false,
+          "has_collision": false,
+          "has_score": false,
+          "has_restart": true,
+          "has_visuals": false,
+          "checks_passed": 2,
+          "checks_total": 9,
+          "playable": false
+        }
+      }
+    }
+  }
+}

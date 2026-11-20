@@ -1,5 +1,8 @@
 import os
+import sys
 import tempfile
+
+import pytest
 
 from aedile.core.graph import ArchitectureGraph
 from aedile.core.parser import (
@@ -117,3 +120,29 @@ def test_graph_exporters() -> None:
     svg = graph.export_svg()
     assert "<svg" in svg
     assert "aedile.core" in svg
+
+
+@pytest.mark.skipif(sys.version_info < (3, 15), reason="PEP 810 lazy imports require Python 3.15+")
+def test_python_315_lazy_imports() -> None:
+    code = """
+lazy import json
+lazy from pathlib import Path
+import os
+"""
+    with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as f:
+        f.write(code.encode("utf-8"))
+        filepath = f.name
+
+    try:
+        parser = PythonParser()
+        sf = parser.parse(filepath, os.path.dirname(filepath), [os.path.dirname(filepath)])
+
+        assert len(sf.imports) == 3
+        assert sf.imports[0].module == "json"
+        assert sf.imports[0].is_lazy is True
+        assert sf.imports[1].module == "pathlib"
+        assert sf.imports[1].is_lazy is True
+        assert sf.imports[2].module == "os"
+        assert sf.imports[2].is_lazy is False
+    finally:
+        os.remove(filepath)

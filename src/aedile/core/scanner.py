@@ -5,7 +5,10 @@ import time
 
 from aedile.core.graph import ArchitectureGraph
 from aedile.core.models import ProjectMetrics, Report, SourceFile, Violation
-from aedile.core.parser import PythonParser, compute_module_name, os_path_root
+from aedile.core.monorepo import check_cross_package_boundaries, discover_workspace_packages
+from aedile.core.parser import LanguageDetector, PythonParser, compute_module_name, os_path_root
+from aedile.core.plugins import load_custom_rules
+from aedile.core.polyglot import PolyglotParser
 from aedile.core.rules import (
     BoundaryRule,
     CycleRule,
@@ -47,7 +50,8 @@ class Scanner:
         start_time = time.time()
 
         # Step 1: Discover all target files
-        target_files: list[str] = []
+        enabled_langs = {lang.lower() for lang in self.config.languages}
+        target_files: list[tuple[str, str]] = []
         for src_dir in self.config.src_dirs:
             full_src_path = os.path.abspath(
                 os.path.join(project_root, src_dir) if not os.path.isabs(src_dir) else src_dir
@@ -59,25 +63,29 @@ class Scanner:
             for root, _, files in os.walk(full_src_path):
                 for file in files:
                     filepath = os.path.join(root, file)
-                    if file.endswith(".py") and not self._should_exclude(filepath, project_root):
-                        target_files.append(filepath)
+                    lang = LanguageDetector.detect(filepath)
+                    if lang in enabled_langs and not self._should_exclude(filepath, project_root):
+                        target_files.append((filepath, lang))
 
         logger.debug(f"Discovered {len(target_files)} target source files.")
 
-        # Step 2: Parse discovered files (via Cache or Parser)
-        for filepath in target_files:
+        # Step 2: Parse discovered files (stat fast-path -> SHA-256 Cache -> Parser)
+        for filepath, lang in target_files:
             try:
-                # Compute hash of current file
-                with open(filepath, "rb") as f:
-                    file_hash = hashlib.sha256(f.read()).hexdigest()
-
+                st = os.stat(filepath)
                 sf = None
                 if self.cache:
-                    sf = self.cache.get(filepath, file_hash)
+                    sf = self.cache.get_by_stat(filepath, st.st_mtime_ns, st.st_size)
 
                 if sf is None:
-                    # Parse fresh
-                    sf = self.parser.parse(filepath, project_root, self.config.src_dirs)
+                    with open(filepath, "rb") as f:
+                        file_hash = hashlib.sha256(f.read()).hexdigest()
+                    if self.cache:
+                        sf = self.cache.get(filepath, file_hash)
+
+                if sf is None:
+                    parser = self.parser if lang == "python" else PolyglotParser(lang)
+                    sf = parser.parse(filepath, project_root, self.config.src_dirs)
                     if self.cache:
                         self.cache.set(filepath, sf)
 
@@ -121,13 +129,15 @@ class Scanner:
                             break
 
                 if target_module and target_module != source_module:
-                    graph.add_edge(source_module, target_module)
+                    graph.add_edge(source_module, target_module, is_lazy=imp.is_lazy)
 
         logger.debug(f"Scan finished in {time.time() - start_time:.3f} seconds.")
         return source_files, graph
 
-    def run_rules(self, files: list[SourceFile], graph: ArchitectureGraph) -> list[Violation]:
-        """Runs all enabled rule checkers against the graph and parsed files."""
+    def run_rules(
+        self, files: list[SourceFile], graph: ArchitectureGraph, project_root: str | None = None
+    ) -> list[Violation]:
+        """Runs all enabled rule checkers, custom plugins, and monorepo boundaries."""
         violations: list[Violation] = []
 
         # Instantiate and run rules
@@ -139,6 +149,8 @@ class Scanner:
             DeadCodeRule(self.config),
             DuplicateRule(self.config),
         ]
+        if project_root:
+            rules.extend(load_custom_rules(project_root, self.config))
 
         for rule in rules:
             try:
@@ -146,6 +158,11 @@ class Scanner:
                 violations.extend(rule_violations)
             except Exception as e:
                 logger.error(f"Rule '{rule.name}' failed to run: {e}")
+
+        if project_root:
+            packages = discover_workspace_packages(project_root)
+            if packages:
+                violations.extend(check_cross_package_boundaries(files, packages))
 
         return violations
 

@@ -1,5 +1,8 @@
+import math
 import os
 import re
+import tomllib
+from collections import Counter
 from typing import Any
 
 from aedile.core.models import SourceFile
@@ -30,11 +33,25 @@ STDLIB_MAP = {
     "math": {"sqrt", "ceil", "floor", "logarithm", "trigonometry", "factorial"},
     "csv": {"csv", "parse csv", "write csv", "comma separated"},
     "urllib.request": {"http request", "fetch url", "urllib", "download file"},
+    "tomllib": {"toml", "parse toml", "pyproject", "read config"},
+    "functools": {"lru_cache", "cache", "memoize", "partial", "wraps", "decorator"},
+    "itertools": {"chain", "combinations", "permutations", "groupby", "islice"},
+    "collections": {"defaultdict", "counter", "deque", "namedtuple", "ordereddict"},
+    "asyncio": {"async", "await", "coroutine", "event loop", "gather", "task"},
+    "dataclasses": {"dataclass", "dto", "value object", "struct"},
+    "logging": {"logger", "log", "logging", "debug log"},
+    "argparse": {"cli", "command line", "subcommand", "argument parser"},
+    "sqlite3": {"sqlite", "local database", "sql", "embedded db"},
 }
 
 # Mapping of common concepts to popular third-party libraries (for dependency checking)
 DEP_MAP = {
     "requests": {"http request", "fetch api", "download", "http client", "get post"},
+    "httpx": {"http client", "async http", "httpx", "fetch api", "rest client"},
+    "pydantic": {"validation", "schema", "basemodel", "pydantic", "data model"},
+    "fastapi": {"api", "endpoint", "router", "fastapi", "rest server"},
+    "pytest": {"unit test", "fixture", "pytest", "parametrize", "mock"},
+    "sqlalchemy": {"orm", "database", "sqlalchemy", "session", "query"},
     "rich": {"console print", "terminal color", "progress bar", "console table", "pretty print"},
     "click": {"cli", "command line", "argparse", "terminal options"},
     "typer": {"cli", "command line", "argparse", "type annotations cli"},
@@ -50,8 +67,9 @@ class SimilarityEngine:
         self.symbol_index: list[dict[str, Any]] = []
 
     def index_project(self, source_files: list[SourceFile]) -> None:
-        """Indexes all public symbols in the project for similarity lookup."""
+        """Indexes all public symbols in the project for BM25 + token similarity lookup."""
         self.symbol_index = []
+        self._doc_freq: Counter[str] = Counter()
         for sf in source_files:
             for sym in sf.symbols:
                 if sym.is_private:
@@ -59,6 +77,10 @@ class SimilarityEngine:
 
                 name_tokens = tokenize(sym.name)
                 doc_tokens = tokenize(sym.docstring) if sym.docstring else set()
+                sig_tokens = tokenize(sym.signature) if sym.signature else set()
+                all_tokens = name_tokens | doc_tokens | sig_tokens
+                for tok in all_tokens:
+                    self._doc_freq[tok] += 1
 
                 self.symbol_index.append(
                     {
@@ -67,38 +89,58 @@ class SimilarityEngine:
                         "filepath": sf.filepath,
                         "relative_path": sf.relative_path,
                         "line": sym.line,
+                        "signature": sym.signature,
+                        "parent_name": sym.parent_name,
                         "name_tokens": name_tokens,
                         "doc_tokens": doc_tokens,
-                        "all_tokens": name_tokens | doc_tokens,
+                        "sig_tokens": sig_tokens,
+                        "all_tokens": all_tokens,
                     }
                 )
 
     def search_symbols(self, query: str, threshold: float = 0.3) -> list[dict[str, Any]]:
-        """Searches indexed symbols for semantic/lexical overlap based on query tokens."""
+        """Searches indexed symbols using IDF-weighted overlap and name boost."""
         query_tokens = tokenize(query)
-        if not query_tokens:
+        if not query_tokens or not self.symbol_index:
             return []
 
+        n_docs = len(self.symbol_index)
         results = []
         for item in self.symbol_index:
-            # Jaccard-like similarity on tokens
             intersection = query_tokens & item["all_tokens"]
             if not intersection:
                 continue
 
-            # Weight name tokens higher than docstring tokens
             name_intersection = query_tokens & item["name_tokens"]
-            score = (len(name_intersection) * 1.5 + len(intersection - name_intersection)) / len(
-                query_tokens
-            )
+            sig_intersection = query_tokens & item.get("sig_tokens", set())
+
+            # Base recall score + IDF weighting so rare domain terms rank higher
+            raw_score = (
+                len(name_intersection) * 1.5
+                + len(sig_intersection) * 0.5
+                + len(intersection - name_intersection)
+            ) / len(query_tokens)
+
+            idf_bonus = sum(
+                math.log(1.0 + (n_docs / (1.0 + self._doc_freq.get(t, 0))))
+                for t in intersection
+            ) / (len(query_tokens) * max(1.0, math.log(1.0 + n_docs)))
+
+            score = raw_score + 0.25 * idf_bonus
 
             if score >= threshold:
+                display_name = (
+                    f"{item['parent_name']}.{item['name']}"
+                    if item.get("parent_name")
+                    else item["name"]
+                )
                 results.append(
                     {
-                        "name": item["name"],
+                        "name": display_name,
                         "kind": item["kind"],
                         "relative_path": item["relative_path"],
                         "line": item["line"],
+                        "signature": item.get("signature"),
                         "score": round(score, 2),
                     }
                 )
@@ -140,8 +182,8 @@ class SimilarityEngine:
         if not matched_packages:
             return []
 
-        # Step 2: Check if package exists in pyproject.toml or requirements.txt
-        installed_recs = []
+        # Step 2: Check if package exists in pyproject.toml (via tomllib) or requirements.txt
+        declared_deps: set[str] = set()
         deps_content = ""
 
         pyproject_path = os.path.join(project_root, "pyproject.toml")
@@ -149,10 +191,23 @@ class SimilarityEngine:
 
         if os.path.exists(pyproject_path):
             try:
-                with open(pyproject_path, encoding="utf-8", errors="ignore") as f:
-                    deps_content += f.read().lower()
+                with open(pyproject_path, "rb") as f:
+                    pyproject_data = tomllib.load(f)
+                project_tbl = pyproject_data.get("project", {})
+                raw_deps: list[str] = list(project_tbl.get("dependencies", []))
+                for opt_list in project_tbl.get("optional-dependencies", {}).values():
+                    if isinstance(opt_list, list):
+                        raw_deps.extend(opt_list)
+                for dep_spec in raw_deps:
+                    pkg_name = re.split(r"[<>=!~;\[\s]", str(dep_spec).strip(), maxsplit=1)[0].lower()
+                    if pkg_name:
+                        declared_deps.add(pkg_name.replace("_", "-"))
             except Exception:
-                pass
+                try:
+                    with open(pyproject_path, encoding="utf-8", errors="ignore") as f:
+                        deps_content += f.read().lower()
+                except Exception:
+                    pass
         if os.path.exists(reqs_path):
             try:
                 with open(reqs_path, encoding="utf-8", errors="ignore") as f:
@@ -160,9 +215,9 @@ class SimilarityEngine:
             except Exception:
                 pass
 
+        installed_recs = []
         for pkg in matched_packages:
-            # Look for dependency in text (e.g. "requests" or "rich")
-            if re.search(r"\b" + re.escape(pkg) + r"\b", deps_content):
+            if pkg in declared_deps or re.search(r"\b" + re.escape(pkg) + r"\b", deps_content):
                 installed_recs.append(pkg)
 
         return installed_recs

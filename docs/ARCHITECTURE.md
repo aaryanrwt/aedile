@@ -1,70 +1,46 @@
 # Aedile Architecture
 
-This document outlines the architectural guidelines and design principles of **Aedile**.
+Aedile enforces a strict inward dependency flow with **zero external runtime dependencies** (Python `3.11–3.15` standard library only).
 
-## Clean Architecture Principles
-
-Aedile strictly enforces a clean architectural separation. Dependencies only flow inwards towards the Domain Layer, which has zero knowledge of the CLI, caching databases, or report templates.
-
-```mermaid
-graph TD
-    subgraph Presentation
-        CLI[src/aedile/cli]
-    end
-
-    subgraph Application
-        Scanner[src/aedile/core/scanner.py]
-        Baseline[src/aedile/core/baseline.py]
-        Inference[src/aedile/core/inference.py]
-        Reporter[src/aedile/core/reporter.py]
-    end
-
-    subgraph Domain
-        Models[src/aedile/core/models.py]
-        Graph[src/aedile/core/graph.py]
-        Rules[src/aedile/core/rules/*]
-    end
-
-    subgraph Infrastructure
-        Cache[src/aedile/infrastructure/cache.py]
-        Watcher[src/aedile/infrastructure/watcher.py]
-    end
-
-    CLI --> Scanner
-    Scanner --> Models
-    Scanner --> Graph
-    Scanner --> Rules
-    Scanner --> Cache
-    Rules --> Models
-    Graph --> Models
-    Cache --> Models
+```text
+Presentation (src/aedile/cli/, src/aedile/mcp/, src/aedile/__main__.py)
+       │
+       ▼
+Application  (scanner.py, mapper.py, inference.py, baseline.py,
+              reporter.py, reviewer.py, verifier.py, optimizer.py,
+              similarity.py, debt.py, plugins.py, monorepo.py)
+       │
+       ▼
+Domain       (models.py, graph.py, parser.py, polyglot.py, rules/*)
+       │
+       ▼
+Infrastructure (cache.py, watcher.py, telemetry.py)
+       │
+       ▼
+Shared       (config.py, errors.py, logging.py)
 ```
-
-### 1. Presentation Layer (`src/aedile/cli/`)
-- Manages command-line argument parsing, options handling, and visual rendering to the stdout/stderr stream.
-- Utilizes the `rich` console engine to output clean, interactive progress indicators and tables.
-- **Rules**: Zero direct imports of parser instances or database caches; communicates exclusively with application runners.
-
-### 2. Application Layer (`src/aedile/core/`)
-- Coordinates the core business flows: scanning folders, matching rules, diffing baselines, and exporting reports.
-- Handles parsing orchestration (`scanner.py`), baseline management (`baseline.py`), and configuration parsing.
-
-### 3. Domain Layer (`src/aedile/core/models.py` & `src/aedile/core/graph.py` & `rules/`)
-- Contains foundational business models (`SourceFile`, `Import`, `Symbol`, `Violation`).
-- Houses the architectural dependency graph logic, containing cycle-finding algorithms (Tarjan's SCC) and layering validators.
-- Enforces code metrics calculation (Architecture Risk Score).
-
-### 4. Infrastructure Layer (`src/aedile/infrastructure/`)
-- Interacts with OS-level interfaces: filesystem directory traversal, modification watches (`watcher.py`), and JSON/SQLite disk caching (`cache.py`).
 
 ---
 
-## Data Flow: Scans
+## Layers
 
-1. **CLI Trigger**: User calls `aedile check`.
-2. **Setup**: The command handler initializes configuration TOML and disk caches.
-3. **Traversal**: The `Scanner` crawls source directories, skipping items in exclude patterns.
-4. **Hashing & Cache Query**: For each file, the scanner hashes contents. If the hash matches the cache, the scanner loads imports/symbols from disk. Otherwise, it triggers the AST parser and registers findings.
-5. **Graph Construction**: The scanner creates an `ArchitectureGraph`, adding nodes for all discovered files and directed edges for internal module imports.
-6. **Rule Checking**: The scanner feeds the graph and files into active rule engines (Cycle, Layer, Naming, etc.), producing `Violation` logs.
-7. **Report Generation**: Outputs list of violations or fails build if regression occurs.
+### 1. Presentation (`src/aedile/cli/`, `src/aedile/mcp/`, `src/aedile/__main__.py`)
+- **MCP Server (`mcp/server.py`)**: Stdio JSON-RPC 2.0 server exposing 6 compact-schema tools (`aedile_consult`, `aedile_verify_architecture`, `aedile_map`, `aedile_graph`, `aedile_review`, `aedile_debt`) with **Observed vs. Inferred** provenance tags.
+- **CLI (`__main__.py`, `cli/setup.py`)**: Commands `check`, `graph`, `map`, `review`, `debt`, `setup`, `init`, `mode`, `board`, and `compile-rules`.
+
+### 2. Application (`src/aedile/core/`)
+- **Orchestration (`scanner.py`)**: Crawls enabled languages, checks `(mtime_ns, size)` + SHA-256 cache, builds `ArchitectureGraph`, runs built-in + opt-in plugin rules (`plugins.py`) and monorepo boundary checks (`monorepo.py`).
+- **Pre-Edit Verification (`verifier.py`)**: Simulates `add`, `modify`, and `delete` changes in memory (with `realpath` symlink-escape protection) to catch cycles, layer violations, and dangling imports before files are written.
+- **Intelligence (`similarity.py`, `optimizer.py`, `mapper.py`, `reviewer.py`, `debt.py`)**: BM25/IDF symbol search, `tomllib` dependency parsing, token-budgeted AST maps, caller-aware blast-radius reviews, and `# shortcut:` / `# aedile-waive:` debt scanning.
+- **Governance (`inference.py`, `baseline.py`, `reporter.py`)**: Zero-config layer inference, `.aedile/baseline.json` regression filtering, and JSON / SARIF 2.1.0 / HTML dashboard export.
+
+### 3. Domain (`models.py`, `graph.py`, `parser.py`, `polyglot.py`, `rules/*`)
+- **IR (`models.py`)**: `SourceFile`, `Import` (including PEP 810 `is_lazy`), `Symbol`, `Violation`, `ProjectMetrics`, `Report`.
+- **Graph (`graph.py`)**: Tarjan's SCC cycle finder, lazy-only cycle detection, cycle-break hints, transitive blast radius, Martin instability ($I = \frac{C_e}{C_a + C_e}$), Mermaid and radial SVG exporters.
+- **Parsers (`parser.py`, `polyglot.py`)**: Python `ast` parser plus structural parsers for TypeScript/JavaScript (`tsconfig.json` aliases), Go, and Rust.
+- **Rules (`rules/*`)**: `CycleRule`, `LayerRule`, `BoundaryRule`, `NamingRule`, `DeadCodeRule`, `DuplicateRule`.
+
+### 4. Infrastructure (`src/aedile/infrastructure/`)
+- **`cache.py`**: Incremental JSON cache (`.aedile/cache.json`) with `(mtime_ns, size)` fast-path.
+- **`watcher.py`**: Zero-dependency `(mtime_ns, size)` diffing so the MCP server skips re-scanning unchanged workspaces.
+- **`telemetry.py`**: Local-only `.aedile/telemetry.jsonl` counters, statusline, and HTML board.

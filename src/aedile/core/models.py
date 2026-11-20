@@ -11,16 +11,19 @@ class Import:
     line: int  # Line number of the import statement
     alias: str | None = None  # Alias if imported as (e.g. 'import x as y')
     is_relative: bool = False  # Whether it's a relative import
+    is_lazy: bool = False  # Whether it's a PEP 810 lazy import (Python 3.15+)
 
 
 @dataclass
 class Symbol:
     name: str  # Symbol name (e.g. 'Scanner')
-    kind: str  # 'class', 'function', 'variable', 'method'
+    kind: str  # 'class', 'function', 'method', 'constant', 'type_alias'
     line: int  # Starting line number
     end_line: int  # Ending line number
     docstring: str | None = None
     is_private: bool = False  # Derived from name prefix (e.g. starts with '_')
+    signature: str | None = None  # Formatted signature (e.g. '(self, x: int) -> str')
+    parent_name: str | None = None  # Enclosing class name for methods
 
 
 @dataclass
@@ -32,6 +35,7 @@ class SourceFile:
     language: str  # 'python', 'javascript', etc.
     imports: list[Import] = field(default_factory=list)
     symbols: list[Symbol] = field(default_factory=list)
+    mtime_ns: int = 0  # Last modification time in nanoseconds for fast cache check
 
 
 @dataclass

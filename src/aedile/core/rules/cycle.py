@@ -30,6 +30,8 @@ class CycleRule(BaseRule):
 
         for cycle in cycles:
             cycle_len = len(cycle)
+            lazy_only = graph.is_cycle_lazy_only(cycle)
+            hint = graph.suggest_cycle_break(cycle)
             # For each step in the cycle: node_a -> node_b
             for i in range(cycle_len):
                 node_a = cycle[i]
@@ -44,6 +46,7 @@ class CycleRule(BaseRule):
                     # Match if the imported module matches B or starts with B (e.g. B.submodule)
                     if imp.module == node_b or imp.module.startswith(node_b + "."):
                         cycle_path = " -> ".join(cycle) + f" -> {cycle[0]}"
+                        kind_note = " (PEP 810 lazy-only cycle)" if lazy_only else ""
                         violations.append(
                             Violation(
                                 rule_name=self.name,
@@ -51,12 +54,13 @@ class CycleRule(BaseRule):
                                 relative_path=sf_a.relative_path,
                                 line=imp.line,
                                 message=(
-                                    f"Dependency cycle detected: {cycle_path}. "
-                                    f"Module '{node_a}' imports '{imp.module}' on line {imp.line}."
+                                    f"Dependency cycle detected{kind_note}: {cycle_path}. "
+                                    f"Module '{node_a}' imports '{imp.module}' on line {imp.line}. "
+                                    f"Hint: {hint}"
                                 ),
                                 offending_symbol=imp.module,
                                 confidence=1.0,
-                                severity="error",
+                                severity="warning" if lazy_only else "error",
                             )
                         )
                         break  # Only report once per file per cycle

@@ -1,23 +1,37 @@
 # Aedile FAQ
 
-## Frequently Asked Questions
+### How do I adopt Aedile on an existing repo without fixing old violations first?
+Snapshot current findings into `.aedile/baseline.json`, then run CI with `--baseline`:
 
-### How do I ignore a legacy violation without refactoring?
-Use the **baseline feature**. Run `aedile baseline` to record all current violations in `.aedile_baseline.json`. Future checks will only report new violations.
+```bash
+aedile check --update-baseline
+aedile check --baseline
+```
 
-### How do I exclude test files from dead code checking?
-Aedile automatically filters out folders matching `**/tests/**`, `**/examples/**`, or files ending in `_test.py` or prefixed with `test_`. You can customize exclusions in the `[project]` section of `aedile.toml`:
+Only *new* architectural regressions will fail the build.
+
+### How does Aedile handle Python 3.15 `lazy import` (PEP 810)?
+`PythonParser` records `is_lazy` on every `Import`. If a dependency cycle consists *only* of PEP 810 lazy imports, `CycleRule` downgrades it from `error` to `warning` and still provides a cycle-breaking hint.
+
+### Can Aedile analyze languages other than Python?
+Yes. Alongside Python `3.11–3.15` (`ast`), Aedile includes zero-dependency structural parsers in `src/aedile/core/polyglot.py` for TypeScript/JavaScript (`tsconfig.json` aliases, ES/CommonJS), Go, and Rust. Enable them in `aedile.toml` under `languages = ["python", "typescript", "go", "rust"]`.
+
+### How do I track intentional shortcuts or deferred refactors?
+Mark them in code comments with a ceiling and upgrade trigger:
+
+```python
+# shortcut: polling every 5s, switch to inotify if >10k files
+```
+
+Run `aedile debt` (or call `aedile_debt` via MCP) to list all markers and flag any `[no-trigger]` comments before they silently rot.
+
+### Does Aedile execute custom `.aedile/rules/*.py` plugins automatically?
+No. Untrusted repository plugins are blocked by default. Enable them explicitly by setting `allow_plugins = true` under `[project]` in `aedile.toml`.
+
+### How do I exclude folders like tests or build artifacts?
+Add glob patterns under `[project]` in `aedile.toml`:
 
 ```toml
 [project]
-exclude = [
-    "**/tests/**",
-    "**/my_custom_folder/**"
-]
+exclude = ["**/tests/**", "**/examples/**", "**/.venv/**"]
 ```
-
-### Can Aedile analyze languages other than Python?
-Aedile's core dependency graph, rule checkers, and exporters are **fully language-agnostic**. The parser layer is designed to accept different language drivers. In Version 1, a native Python AST parser is built-in. Drivers for JS/TS/Go/Rust are planned for Version 2 using tree-sitter.
-
-### Why is my import marked as a Cycle Violation?
-A circular dependency means module `A` imports `B`, and `B` imports `A` (directly or through intermediate files like `A -> B -> C -> A`). This leads to high coupling and import errors. Use dependency inversion (injecting interfaces/protocols) or merge tightly bound packages.

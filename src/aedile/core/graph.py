@@ -10,6 +10,8 @@ class ArchitectureGraph:
         self.incoming_edges: dict[str, set[str]] = {}
         # metadata mapping from module name to file path
         self.module_to_file: dict[str, str] = {}
+        # track whether an edge is exclusively via PEP 810 lazy imports
+        self.edge_lazy: dict[tuple[str, str], bool] = {}
 
     def add_node(self, module: str, filepath: str = "") -> None:
         self.nodes.add(module)
@@ -20,7 +22,7 @@ class ArchitectureGraph:
         if filepath:
             self.module_to_file[module] = filepath
 
-    def add_edge(self, from_module: str, to_module: str) -> None:
+    def add_edge(self, from_module: str, to_module: str, is_lazy: bool = False) -> None:
         if from_module not in self.nodes:
             self.add_node(from_module)
         if to_module not in self.nodes:
@@ -28,6 +30,12 @@ class ArchitectureGraph:
 
         self.edges[from_module].add(to_module)
         self.incoming_edges[to_module].add(from_module)
+        key = (from_module, to_module)
+        if key in self.edge_lazy:
+            # Edge is lazy only if all imports along it are lazy
+            self.edge_lazy[key] = self.edge_lazy[key] and is_lazy
+        else:
+            self.edge_lazy[key] = is_lazy
 
     def remove_edge(self, from_module: str, to_module: str) -> None:
         if from_module in self.edges:
@@ -40,6 +48,55 @@ class ArchitectureGraph:
 
     def get_dependents(self, module: str) -> set[str]:
         return self.incoming_edges.get(module, set())
+
+    def get_blast_radius(self, module: str) -> set[str]:
+        """Returns all transitive dependents of `module` using BFS on incoming_edges."""
+        if module not in self.nodes:
+            return set()
+        visited: set[str] = set()
+        queue: list[str] = [module]
+        while queue:
+            curr = queue.pop(0)
+            for dep in self.incoming_edges.get(curr, set()):
+                if dep != module and dep not in visited:
+                    visited.add(dep)
+                    queue.append(dep)
+        return visited
+
+    def get_coupling_metrics(self, module: str) -> dict[str, float | int]:
+        """Returns fan-in (Ca), fan-out (Ce), and Martin instability I = Ce / (Ca + Ce)."""
+        ca = len(self.incoming_edges.get(module, set()))
+        ce = len(self.edges.get(module, set()))
+        instability = round(ce / (ca + ce), 3) if (ca + ce) > 0 else 0.0
+        return {"fan_in": ca, "fan_out": ce, "instability": instability}
+
+    def is_cycle_lazy_only(self, cycle: list[str]) -> bool:
+        """Returns True if every directed edge in the cycle is a PEP 810 lazy import."""
+        if not cycle:
+            return False
+        for i, src in enumerate(cycle):
+            dst = cycle[(i + 1) % len(cycle)]
+            if not self.edge_lazy.get((src, dst), False):
+                return False
+        return True
+
+    def suggest_cycle_break(self, cycle: list[str]) -> str:
+        """Suggests a concrete refactor to break a dependency cycle."""
+        if len(cycle) < 2:
+            return "Remove the self-import."
+        # Pick the edge whose target has the highest fan-in (most stable module)
+        best_edge = (cycle[0], cycle[1])
+        best_score = -1
+        for i, src in enumerate(cycle):
+            dst = cycle[(i + 1) % len(cycle)]
+            score = len(self.incoming_edges.get(dst, set()))
+            if score > best_score:
+                best_score = score
+                best_edge = (src, dst)
+        return (
+            f"Extract shared types/protocol out of '{best_edge[1]}' or convert the import "
+            f"'{best_edge[0]} -> {best_edge[1]}' into a PEP 810 `lazy import` / local import."
+        )
 
     def find_all_cycles(self) -> list[list[str]]:
         """Finds all dependency cycles in the graph using Tarjan's Strongly Connected Components.

@@ -25,6 +25,7 @@ class ArchitectureVerifier:
         # Create a deep copy of base files to simulate modifications
         sim_files = {sf.relative_path: copy.deepcopy(sf) for sf in base_files}
         proposed_paths = set()
+        deleted_modules: dict[str, str] = {}
 
         for change in proposed_changes:
             rel_path = change.get("path")
@@ -34,9 +35,9 @@ class ArchitectureVerifier:
             # Standardize path separator to forward slash
             rel_path = rel_path.replace(os.sep, "/")
 
-            # Path traversal prevention
-            filepath = os.path.abspath(os.path.join(project_root, rel_path))
-            safe_project_root = os.path.abspath(project_root)
+            # Path traversal & symlink-escape prevention
+            filepath = os.path.realpath(os.path.join(project_root, rel_path))
+            safe_project_root = os.path.realpath(project_root)
             if (
                 not filepath.startswith(safe_project_root + os.sep)
                 and filepath != safe_project_root
@@ -56,6 +57,17 @@ class ArchitectureVerifier:
             proposed_paths.add(rel_path)
             action = change.get("action", "add")
 
+            if action == "delete":
+                if rel_path in sim_files:
+                    sf_del = sim_files.pop(rel_path)
+                    mod = compute_module_name(
+                        sf_del.filepath,
+                        os_path_root(sf_del.filepath, sf_del.relative_path),
+                        self.config.src_dirs,
+                    )
+                    deleted_modules[mod] = rel_path
+                continue
+
             # Parse proposed imports
             imports = []
             for imp_name in change.get("imports", []):
@@ -63,7 +75,6 @@ class ArchitectureVerifier:
 
             if action == "add" or rel_path not in sim_files:
                 # Simulate new file
-
                 sim_files[rel_path] = SourceFile(
                     filepath=filepath,
                     relative_path=rel_path,
@@ -79,6 +90,29 @@ class ArchitectureVerifier:
                 sf.imports.extend(imports)
 
         simulated_files = list(sim_files.values())
+
+        # Check for dangling imports referencing deleted modules
+        dangling_violations: list[Violation] = []
+        if deleted_modules:
+            for sf in simulated_files:
+                for imp in sf.imports:
+                    for del_mod, del_rel in deleted_modules.items():
+                        if imp.module == del_mod or imp.module.startswith(del_mod + "."):
+                            dangling_violations.append(
+                                Violation(
+                                    rule_name="dangling_import",
+                                    filepath=sf.filepath,
+                                    relative_path=sf.relative_path,
+                                    line=imp.line,
+                                    message=(
+                                        f"Deleting '{del_rel}' breaks import '{imp.module}' "
+                                        f"in '{sf.relative_path}':L{imp.line}."
+                                    ),
+                                    offending_symbol=imp.module,
+                                    confidence=1.0,
+                                    severity="error",
+                                )
+                            )
 
         # Rebuild Graph
         graph = ArchitectureGraph()
@@ -109,7 +143,7 @@ class ArchitectureVerifier:
                             break
 
                 if target_module and target_module != source_module:
-                    graph.add_edge(source_module, target_module)
+                    graph.add_edge(source_module, target_module, is_lazy=imp.is_lazy)
 
         # Run rules
         violations: list[Violation] = []
@@ -146,4 +180,4 @@ class ArchitectureVerifier:
                 if any(m in v.message for m in proposed_modules):
                     filtered_violations.append(v)
 
-        return filtered_violations
+        return dangling_violations + filtered_violations

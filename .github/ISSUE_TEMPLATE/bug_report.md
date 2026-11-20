@@ -23,7 +23,7 @@ If applicable, add screenshots or copy-paste terminal outputs (with `--verbose` 
 
 ### Environment Context
 - **Aedile Version**: [e.g., 1.0.0]
-- **Python Version**: [e.g., 3.11.4]
+- **Python Version**: [e.g., 3.15.2]
 - **OS**: [e.g., Windows 11, macOS Sonoma, Ubuntu 22.04]
 - **Ecosystem tools**: [e.g., uv, poetry, pip, pre-commit]
 

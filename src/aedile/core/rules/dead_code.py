@@ -51,8 +51,13 @@ class DeadCodeRule(BaseRule):
             module_name = compute_module_name(sf.filepath, root, self.config.src_dirs)
 
             for sym in sf.symbols:
-                # Exclude main function, private symbols, or dunders
-                if sym.name in ["main", "app"] or sym.name.startswith("__"):
+                # Exclude main function, dunders, visitor hooks, or class methods called via self
+                if (
+                    sym.name in ["main", "app"]
+                    or sym.name.startswith("__")
+                    or sym.name.startswith("visit_")
+                    or sym.kind == "method"
+                ):
                     continue
                 # Exclude private functions unless we want strict checking, but let's check them inside the same file.
                 # Actually, private symbols (like `_helper`) are used if they appear elsewhere in the SAME file!

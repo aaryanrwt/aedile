@@ -1,0 +1,210 @@
+{
+  "model": "qwen3:4b",
+  "prompts": 12,
+  "results": [
+    {
+      "id": "p01_reuse_symbol",
+      "expected": "tokenize",
+      "ponytail": {
+        "prompt_tokens": 795,
+        "output_tokens": 160,
+        "elapsed_s": 5.55,
+        "model_hit": true
+      },
+      "aedile": {
+        "prompt_tokens": 528,
+        "output_tokens": 160,
+        "elapsed_s": 5.727,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p02_reuse_graph_cycle",
+      "expected": "find_all_cycles",
+      "ponytail": {
+        "prompt_tokens": 790,
+        "output_tokens": 160,
+        "elapsed_s": 5.374,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 525,
+        "output_tokens": 160,
+        "elapsed_s": 5.642,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p03_stdlib_toml",
+      "expected": "tomllib",
+      "ponytail": {
+        "prompt_tokens": 788,
+        "output_tokens": 160,
+        "elapsed_s": 5.433,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 973,
+        "output_tokens": 160,
+        "elapsed_s": 6.114,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p04_stdlib_hash",
+      "expected": "hashlib",
+      "ponytail": {
+        "prompt_tokens": 792,
+        "output_tokens": 160,
+        "elapsed_s": 5.359,
+        "model_hit": true
+      },
+      "aedile": {
+        "prompt_tokens": 938,
+        "output_tokens": 160,
+        "elapsed_s": 5.827,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p05_layer_violation_block",
+      "expected": "layer",
+      "ponytail": {
+        "prompt_tokens": 799,
+        "output_tokens": 160,
+        "elapsed_s": 5.421,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 1019,
+        "output_tokens": 160,
+        "elapsed_s": 5.84,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p06_cycle_prevention",
+      "expected": "cycle",
+      "ponytail": {
+        "prompt_tokens": 800,
+        "output_tokens": 160,
+        "elapsed_s": 5.595,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 1063,
+        "output_tokens": 160,
+        "elapsed_s": 5.986,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p07_delete_dangling_import",
+      "expected": "dangling",
+      "ponytail": {
+        "prompt_tokens": 792,
+        "output_tokens": 160,
+        "elapsed_s": 5.47,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 903,
+        "output_tokens": 160,
+        "elapsed_s": 6.074,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p08_reuse_verifier",
+      "expected": "ArchitectureVerifier",
+      "ponytail": {
+        "prompt_tokens": 795,
+        "output_tokens": 160,
+        "elapsed_s": 5.521,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 542,
+        "output_tokens": 160,
+        "elapsed_s": 5.616,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p09_reuse_baseline",
+      "expected": "BaselineManager",
+      "ponytail": {
+        "prompt_tokens": 791,
+        "output_tokens": 160,
+        "elapsed_s": 5.322,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 674,
+        "output_tokens": 160,
+        "elapsed_s": 5.505,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p10_reuse_sarif",
+      "expected": "to_sarif",
+      "ponytail": {
+        "prompt_tokens": 799,
+        "output_tokens": 160,
+        "elapsed_s": 5.374,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 623,
+        "output_tokens": 160,
+        "elapsed_s": 5.473,
+        "model_hit": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "p11_blast_radius",
+      "expected": "get_blast_radius",
+      "ponytail": {
+        "prompt_tokens": 795,
+        "output_tokens": 160,
+        "elapsed_s": 5.32,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 620,
+        "output_tokens": 160,
+        "elapsed_s": 5.589,
+        "model_hit": false,
+        "tool_caught": false
+      }
+    },
+    {
+      "id": "p12_debt_ledger",
+      "expected": "scan_debt",
+      "ponytail": {
+        "prompt_tokens": 799,
+        "output_tokens": 160,
+        "elapsed_s": 5.519,
+        "model_hit": false
+      },
+      "aedile": {
+        "prompt_tokens": 626,
+        "output_tokens": 160,
+        "elapsed_s": 5.679,
+        "model_hit": false,
+        "tool_caught": true
+      }
+    }
+  ]
+}
