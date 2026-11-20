@@ -21,7 +21,11 @@ class ReviewFinding:
 
 def _git_changed_files(project_root: str, base_ref: str = "HEAD") -> list[str]:
     """Returns relative paths of modified/untracked files using git."""
-    if not base_ref or base_ref.startswith("-") or any(c.isspace() or c == "\x00" for c in base_ref):
+    if (
+        not base_ref
+        or base_ref.startswith("-")
+        or any(c.isspace() or c == "\x00" for c in base_ref)
+    ):
         return []
     try:
         out = subprocess.check_output(
@@ -42,9 +46,7 @@ def _git_changed_files(project_root: str, base_ref: str = "HEAD") -> list[str]:
             timeout=5,
         )
         return [
-            line[3:].strip().replace("\\", "/")
-            for line in status.splitlines()
-            if len(line) > 3
+            line[3:].strip().replace("\\", "/") for line in status.splitlines() if len(line) > 3
         ]
     except Exception:
         return []
@@ -60,7 +62,9 @@ def review_changes(
     base_ref: str = "HEAD",
 ) -> list[ReviewFinding]:
     """Performs caller-aware, blast-radius architectural review on changed files."""
-    targets = changed_paths if changed_paths is not None else _git_changed_files(project_root, base_ref)
+    targets = (
+        changed_paths if changed_paths is not None else _git_changed_files(project_root, base_ref)
+    )
     if not targets:
         # Fallback: review highest-fan-in modules in the repo
         targets = [sf.relative_path for sf in files[:10]]
@@ -136,7 +140,11 @@ def review_changes(
 def format_review(findings: list[ReviewFinding]) -> str:
     if not findings:
         return "Looks good. Ship.\nChecked architectural rules, blast radius, and test coverage."
-    groups = [("must_fix", "Must fix"), ("should_fix", "Should fix"), ("nice_to_have", "Nice to have")]
+    groups = [
+        ("must_fix", "Must fix"),
+        ("should_fix", "Should fix"),
+        ("nice_to_have", "Nice to have"),
+    ]
     lines = ["### Aedile Blast-Radius Review"]
     idx = 1
     for key, label in groups:

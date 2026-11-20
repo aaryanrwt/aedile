@@ -100,7 +100,9 @@ class AedileMcpServer:
                     output.append(f"- **{s['module']}**: {s['description']}")
 
             if deps:
-                output.append("\n#### Declared Dependencies [Observed: pyproject.toml/requirements]")
+                output.append(
+                    "\n#### Declared Dependencies [Observed: pyproject.toml/requirements]"
+                )
                 for d in deps:
                     output.append(f"- Reusable package **{d}** is already declared.")
 
@@ -144,7 +146,9 @@ class AedileMcpServer:
             return {"content": [{"type": "text", "text": "Architecture compliant (0 violations)."}]}
         lines = [f"Found {len(violations)} architectural violation(s):"]
         for v in violations:
-            lines.append(f"- [{v.severity.upper()}] {v.relative_path}:L{v.line} ({v.rule_name}): {v.message}")
+            lines.append(
+                f"- [{v.severity.upper()}] {v.relative_path}:L{v.line} ({v.rule_name}): {v.message}"
+            )
         return {"content": [{"type": "text", "text": "\n".join(lines)}]}
 
     def handle_graph(self, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -201,7 +205,10 @@ class AedileMcpServer:
                                 "type": "object",
                                 "properties": {
                                     "path": {"type": "string"},
-                                    "action": {"type": "string", "enum": ["add", "modify", "delete"]},
+                                    "action": {
+                                        "type": "string",
+                                        "enum": ["add", "modify", "delete"],
+                                    },
                                     "imports": {"type": "array", "items": {"type": "string"}},
                                 },
                                 "required": ["path", "action"],
@@ -223,7 +230,10 @@ class AedileMcpServer:
                                 "type": "object",
                                 "properties": {
                                     "path": {"type": "string"},
-                                    "action": {"type": "string", "enum": ["add", "modify", "delete"]},
+                                    "action": {
+                                        "type": "string",
+                                        "enum": ["add", "modify", "delete"],
+                                    },
                                     "imports": {"type": "array", "items": {"type": "string"}},
                                 },
                                 "required": ["path", "action"],

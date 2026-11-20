@@ -136,7 +136,9 @@ class PythonParser(BaseParser):
                 self.generic_visit(node)
 
             def _format_sig(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
-                args = [a.arg for a in node.args.posonlyargs + node.args.args + node.args.kwonlyargs]
+                args = [
+                    a.arg for a in node.args.posonlyargs + node.args.args + node.args.kwonlyargs
+                ]
                 if node.args.vararg:
                     args.append(f"*{node.args.vararg.arg}")
                 if node.args.kwarg:
@@ -213,7 +215,11 @@ class PythonParser(BaseParser):
             def visit_Assign(self, node: ast.Assign) -> None:
                 if isinstance(getattr(node, "parent", None), ast.Module):
                     for target in node.targets:
-                        if isinstance(target, ast.Name) and target.id.isupper() and len(target.id) > 1:
+                        if (
+                            isinstance(target, ast.Name)
+                            and target.id.isupper()
+                            and len(target.id) > 1
+                        ):
                             symbols.append(
                                 Symbol(
                                     name=target.id,

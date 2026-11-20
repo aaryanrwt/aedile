@@ -52,7 +52,11 @@ PROMPTS: list[dict[str, Any]] = [
         "prompt": "Import `aedile.cli.setup` inside `src/aedile/shared/config.py` to read intensity mode.",
         "expected_reuse": "layer",
         "proposed_changes": [
-            {"path": "src/aedile/shared/config.py", "action": "modify", "imports": ["aedile.cli.setup"]}
+            {
+                "path": "src/aedile/shared/config.py",
+                "action": "modify",
+                "imports": ["aedile.cli.setup"],
+            }
         ],
     },
     {
@@ -60,7 +64,11 @@ PROMPTS: list[dict[str, Any]] = [
         "prompt": "Import `aedile.core.scanner` inside `src/aedile/core/models.py` to attach scan helpers.",
         "expected_reuse": "cycle",
         "proposed_changes": [
-            {"path": "src/aedile/core/models.py", "action": "modify", "imports": ["aedile.core.scanner"]}
+            {
+                "path": "src/aedile/core/models.py",
+                "action": "modify",
+                "imports": ["aedile.core.scanner"],
+            }
         ],
     },
     {
@@ -157,7 +165,9 @@ def _build_ponytail_context(ponytail_dir: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Side-by-side Ollama benchmark: Ponytail vs Aedile")
+    parser = argparse.ArgumentParser(
+        description="Side-by-side Ollama benchmark: Ponytail vs Aedile"
+    )
     parser.add_argument("--host", default="http://localhost:11434")
     parser.add_argument("--model", default=None)
     parser.add_argument("--ponytail-dir", default=None)
@@ -236,17 +246,27 @@ def main() -> int:
         f.write(f"- **Generated on**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"- **Ollama Model**: `{model}` (`temperature=0.0`, `num_predict=160`)\n")
         f.write(f"- **Python Version**: `{sys.version.split()[0]}`\n")
-        f.write(f"- **Prompts Evaluated**: {len(rows)} tasks (reuse, stdlib, layer boundary, cycle prevention, delete impact, blast radius, debt ledger)\n\n")
+        f.write(
+            f"- **Prompts Evaluated**: {len(rows)} tasks (reuse, stdlib, layer boundary, cycle prevention, delete impact, blast radius, debt ledger)\n\n"
+        )
         f.write("## Summary Comparison\n\n")
-        f.write("| Metric | Ponytail (`AGENTS.md` + `ponytail-map.js`) | Aedile (`aedile map` + `aedile_consult`) |\n")
+        f.write(
+            "| Metric | Ponytail (`AGENTS.md` + `ponytail-map.js`) | Aedile (`aedile map` + `aedile_consult`) |\n"
+        )
         f.write("| :--- | :---: | :---: |\n")
-        f.write(f"| **LLM Response Hit Rate** | {p_hits}/{len(rows)} ({p_hits/len(rows)*100:.1f}%) | **{a_hits}/{len(rows)} ({a_hits/len(rows)*100:.1f}%)** |\n")
-        f.write(f"| **Deterministic Tool Guarantee** | 0/{len(rows)} (no AST/graph tool) | **{a_tools}/{len(rows)} ({a_tools/len(rows)*100:.1f}%)** |\n")
+        f.write(
+            f"| **LLM Response Hit Rate** | {p_hits}/{len(rows)} ({p_hits / len(rows) * 100:.1f}%) | **{a_hits}/{len(rows)} ({a_hits / len(rows) * 100:.1f}%)** |\n"
+        )
+        f.write(
+            f"| **Deterministic Tool Guarantee** | 0/{len(rows)} (no AST/graph tool) | **{a_tools}/{len(rows)} ({a_tools / len(rows) * 100:.1f}%)** |\n"
+        )
         f.write(f"| **Avg Prompt Tokens** | {p_in:.1f} | {a_in:.1f} |\n")
         f.write(f"| **Avg Output Tokens** | {p_out:.1f} | {a_out:.1f} |\n")
         f.write(f"| **Avg Latency (s)** | {p_time:.2f}s | {a_time:.2f}s |\n\n")
         f.write("## Per-Prompt Results\n\n")
-        f.write("| Prompt ID | Expected Signal | Ponytail Hit | Ponytail Tokens (in/out) | Ponytail Time | Aedile Model Hit | Aedile Tool Caught | Aedile Tokens (in/out) | Aedile Time |\n")
+        f.write(
+            "| Prompt ID | Expected Signal | Ponytail Hit | Ponytail Tokens (in/out) | Ponytail Time | Aedile Model Hit | Aedile Tool Caught | Aedile Tokens (in/out) | Aedile Time |\n"
+        )
         f.write("| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n")
         for r in rows:
             p = r["ponytail"]

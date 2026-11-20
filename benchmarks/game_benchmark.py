@@ -84,7 +84,9 @@ def _verify_game_html(html_text: str, kind: str) -> dict[str, Any]:
     js_syntax_ok = False
     js_err = ""
     if js_code:
-        with tempfile.NamedTemporaryFile(suffix=".js", mode="w", encoding="utf-8", delete=False) as tf:
+        with tempfile.NamedTemporaryFile(
+            suffix=".js", mode="w", encoding="utf-8", delete=False
+        ) as tf:
             tf.write(js_code)
             tf_path = tf.name
         try:
@@ -136,7 +138,11 @@ def _verify_game_html(html_text: str, kind: str) -> dict[str, Any]:
         "has_visuals": has_visuals,
         "checks_passed": sum(1 for c in checks if c),
         "checks_total": len(checks),
-        "playable": parser.has_canvas and js_syntax_ok and has_loop and has_controls and has_collision,
+        "playable": parser.has_canvas
+        and js_syntax_ok
+        and has_loop
+        and has_controls
+        and has_collision,
     }
 
 
@@ -186,7 +192,9 @@ def main() -> int:
     results: dict[str, Any] = {"model": args.model, "games": {}}
 
     for gname, gprompt in games:
-        consult = srv.handle_consult({"proposed_plan": gprompt, "proposed_changes": []})["content"][0]["text"]
+        consult = srv.handle_consult({"proposed_plan": gprompt, "proposed_changes": []})["content"][
+            0
+        ]["text"]
         aedile_sys = f"{aedile_map}\n\n{consult}"
 
         results["games"][gname] = {}

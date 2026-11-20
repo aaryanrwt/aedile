@@ -51,17 +51,47 @@ def test_codebase_map_prioritizes_shared_within_budget() -> None:
 
 def test_infer_layers_and_baseline_and_reporters() -> None:
     files = [
-        SourceFile(filepath="/r/src/cli/app.py", relative_path="src/cli/app.py", file_hash="1", file_size=1, language="python"),
-        SourceFile(filepath="/r/src/domain/user.py", relative_path="src/domain/user.py", file_hash="2", file_size=1, language="python"),
-        SourceFile(filepath="/r/src/shared/err.py", relative_path="src/shared/err.py", file_hash="3", file_size=1, language="python"),
+        SourceFile(
+            filepath="/r/src/cli/app.py",
+            relative_path="src/cli/app.py",
+            file_hash="1",
+            file_size=1,
+            language="python",
+        ),
+        SourceFile(
+            filepath="/r/src/domain/user.py",
+            relative_path="src/domain/user.py",
+            file_hash="2",
+            file_size=1,
+            language="python",
+        ),
+        SourceFile(
+            filepath="/r/src/shared/err.py",
+            relative_path="src/shared/err.py",
+            file_hash="3",
+            file_size=1,
+            language="python",
+        ),
     ]
     cfg = infer_layers(files, Config())
     assert "presentation" in cfg.layer_order
     assert "domain" in cfg.layer_order
     assert "shared" in cfg.layer_order
 
-    v1 = Violation(rule_name="cycle_detection", filepath="/r/a.py", relative_path="a.py", line=1, message="cycle")
-    v2 = Violation(rule_name="layer_violations", filepath="/r/b.py", relative_path="b.py", line=2, message="layer")
+    v1 = Violation(
+        rule_name="cycle_detection",
+        filepath="/r/a.py",
+        relative_path="a.py",
+        line=1,
+        message="cycle",
+    )
+    v2 = Violation(
+        rule_name="layer_violations",
+        filepath="/r/b.py",
+        relative_path="b.py",
+        line=2,
+        message="layer",
+    )
 
     with tempfile.TemporaryDirectory() as tmp:
         bm = BaselineManager(tmp)
@@ -105,7 +135,9 @@ def test_verifier_delete_action_detects_dangling_import() -> None:
             imports=[Import(module="shared.auth", names=["login"], line=3)],
         ),
     ]
-    violations = verifier.verify_changes("/proj", base_files, [{"path": "src/shared/auth.py", "action": "delete"}])
+    violations = verifier.verify_changes(
+        "/proj", base_files, [{"path": "src/shared/auth.py", "action": "delete"}]
+    )
     assert any(v.rule_name == "dangling_import" for v in violations)
 
 
@@ -142,7 +174,9 @@ def test_debt_ledger_and_blast_radius_review() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         fpath = os.path.join(tmp, "worker.py")
         with open(fpath, "w", encoding="utf-8") as f:
-            f.write("# shortcut: polling every 5s, switch to inotify if >10k files\n# aedile-waive: legacy\n")
+            f.write(
+                "# shortcut: polling every 5s, switch to inotify if >10k files\n# aedile-waive: legacy\n"
+            )
         entries = scan_debt(tmp)
         assert len(entries) == 2
         assert entries[0].has_trigger is True
@@ -153,7 +187,13 @@ def test_debt_ledger_and_blast_radius_review() -> None:
     graph = ArchitectureGraph()
     for caller in ("c1", "c2", "c3"):
         graph.add_edge(caller, "core.db")
-    sf_db = SourceFile(filepath="/p/src/core/db.py", relative_path="src/core/db.py", file_hash="1", file_size=1, language="python")
+    sf_db = SourceFile(
+        filepath="/p/src/core/db.py",
+        relative_path="src/core/db.py",
+        file_hash="1",
+        file_size=1,
+        language="python",
+    )
     findings = review_changes("/p", [sf_db], graph, [], Config(), changed_paths=["src/core/db.py"])
     rendered = format_review(findings)
     assert "High blast radius" in rendered
@@ -229,7 +269,9 @@ def test_plugins_monorepo_watcher_telemetry_and_setup() -> None:
         assert w.has_changes([os.path.join(rules_dir, "custom.py")]) is False
 
         t = TelemetryStore(tmp)
-        t.record("aedile_consult", reused_symbols=2, violations_prevented=1, estimated_tokens_saved=1200)
+        t.record(
+            "aedile_consult", reused_symbols=2, violations_prevented=1, estimated_tokens_saved=1200
+        )
         assert "reused: 2" in t.statusline()
         assert "Aedile Local Telemetry Board" in t.render_board_html()
 
@@ -245,4 +287,7 @@ def test_plugins_monorepo_watcher_telemetry_and_setup() -> None:
             f.write("def greet_user() -> str:\n    return 'hi'\n")
         srv = AedileMcpServer(tmp)
         assert "greet_user" in srv.handle_map({"budget": 500})["content"][0]["text"]
-        assert "0 violations" in srv.handle_verify_architecture({"proposed_changes": []})["content"][0]["text"]
+        assert (
+            "0 violations"
+            in srv.handle_verify_architecture({"proposed_changes": []})["content"][0]["text"]
+        )

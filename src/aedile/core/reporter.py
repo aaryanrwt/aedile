@@ -89,7 +89,9 @@ def to_html(report: Report, graph: ArchitectureGraph) -> str:
             f"<td>{html.escape(v.message)}</td>"
             "</tr>"
         )
-    table_body = "\n".join(rows) if rows else "<tr><td colspan='4'>No violations detected.</td></tr>"
+    table_body = (
+        "\n".join(rows) if rows else "<tr><td colspan='4'>No violations detected.</td></tr>"
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">

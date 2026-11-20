@@ -122,8 +122,7 @@ class SimilarityEngine:
             ) / len(query_tokens)
 
             idf_bonus = sum(
-                math.log(1.0 + (n_docs / (1.0 + self._doc_freq.get(t, 0))))
-                for t in intersection
+                math.log(1.0 + (n_docs / (1.0 + self._doc_freq.get(t, 0)))) for t in intersection
             ) / (len(query_tokens) * max(1.0, math.log(1.0 + n_docs)))
 
             score = raw_score + 0.25 * idf_bonus
@@ -199,7 +198,9 @@ class SimilarityEngine:
                     if isinstance(opt_list, list):
                         raw_deps.extend(opt_list)
                 for dep_spec in raw_deps:
-                    pkg_name = re.split(r"[<>=!~;\[\s]", str(dep_spec).strip(), maxsplit=1)[0].lower()
+                    pkg_name = re.split(r"[<>=!~;\[\s]", str(dep_spec).strip(), maxsplit=1)[
+                        0
+                    ].lower()
                     if pkg_name:
                         declared_deps.add(pkg_name.replace("_", "-"))
             except Exception:

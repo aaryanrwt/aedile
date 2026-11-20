@@ -76,9 +76,7 @@ def _write_claude_hooks(project_root: str, dry_run: bool) -> str:
         }
     ]
     hooks["SubagentStart"] = [
-        {
-            "hooks": [{"type": "command", "command": f"{sys.executable} -m aedile map --budget 1200"}]
-        }
+        {"hooks": [{"type": "command", "command": f"{sys.executable} -m aedile map --budget 1200"}]}
     ]
     if dry_run:
         return f"[dry-run] Would write SessionStart & SubagentStart hooks to {hooks_path}"
@@ -96,8 +94,14 @@ def setup_agents(project_root: str, dry_run: bool = False) -> list[str]:
     results: list[str] = []
 
     # Project-local Cursor MCP & Claude Code hooks
-    results.append(_merge_json_mcp(os.path.join(abs_root, ".cursor", "mcp.json"), [py_exe, "-m", "aedile"], dry_run))
-    results.append(_merge_json_mcp(os.path.join(abs_root, ".mcp.json"), [py_exe, "-m", "aedile"], dry_run))
+    results.append(
+        _merge_json_mcp(
+            os.path.join(abs_root, ".cursor", "mcp.json"), [py_exe, "-m", "aedile"], dry_run
+        )
+    )
+    results.append(
+        _merge_json_mcp(os.path.join(abs_root, ".mcp.json"), [py_exe, "-m", "aedile"], dry_run)
+    )
     results.append(_write_claude_hooks(abs_root, dry_run))
 
     # Windsurf / Copilot / Gemini instructions if directories exist

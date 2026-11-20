@@ -14,12 +14,7 @@ def discover_workspace_packages(project_root: str) -> dict[str, str]:
         try:
             with open(pyproject, "rb") as f:
                 data = tomllib.load(f)
-            members = (
-                data.get("tool", {})
-                .get("uv", {})
-                .get("workspace", {})
-                .get("members", [])
-            )
+            members = data.get("tool", {}).get("uv", {}).get("workspace", {}).get("members", [])
             for m in members:
                 base = str(m).rstrip("/*")
                 cand = os.path.join(abs_root, base)

@@ -72,5 +72,7 @@ def build_codebase_map(
         used += len(line) + 1
 
     header = "Aedile AST Codebase Map (reuse existing symbols; read a file only for details):\n"
-    footer = f"\n({skipped} more directories omitted by {budget_chars}-char budget)" if skipped else ""
+    footer = (
+        f"\n({skipped} more directories omitted by {budget_chars}-char budget)" if skipped else ""
+    )
     return header + "\n".join(lines) + footer

@@ -35,11 +35,7 @@ def load_custom_rules(
             spec.loader.exec_module(mod)
             for attr_name in dir(mod):
                 attr = getattr(mod, attr_name)
-                if (
-                    isinstance(attr, type)
-                    and issubclass(attr, BaseRule)
-                    and attr is not BaseRule
-                ):
+                if isinstance(attr, type) and issubclass(attr, BaseRule) and attr is not BaseRule:
                     loaded.append(attr(config))
         except Exception as e:
             logger.warning(f"Failed loading custom rule plugin {fpath}: {e}")

@@ -4,7 +4,9 @@ from dataclasses import dataclass
 
 from aedile.shared.config import Config
 
-_DEBT_RE = re.compile(r"^\s*(#|//|/\*)\s*(shortcut|aedile-waive|ponytail)\s*:\s*(.+)$", re.IGNORECASE)
+_DEBT_RE = re.compile(
+    r"^\s*(#|//|/\*)\s*(shortcut|aedile-waive|ponytail)\s*:\s*(.+)$", re.IGNORECASE
+)
 _SKIP_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", "dist", "build", ".aedile"}
 _CODE_EXTS = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs"}
 
@@ -85,8 +87,6 @@ def format_debt_ledger(entries: list[DebtEntry]) -> str:
         if not e.has_trigger:
             no_trigger += 1
         trig_str = f" | upgrade: {e.upgrade_trigger}" if e.upgrade_trigger else ""
-        lines.append(
-            f"- `{e.relative_path}:{e.line}` ({e.marker}): {e.ceiling}{trig_str}{tag}"
-        )
+        lines.append(f"- `{e.relative_path}:{e.line}` ({e.marker}): {e.ceiling}{trig_str}{tag}")
     lines.append(f"\n**Summary**: {len(entries)} markers, {no_trigger} with no trigger.")
     return "\n".join(lines)

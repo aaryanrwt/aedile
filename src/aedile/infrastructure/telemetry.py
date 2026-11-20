@@ -86,10 +86,10 @@ class TelemetryStore:
   <h1>Aedile Local Telemetry Board</h1>
   <p>Project: <code>{html.escape(self.project_root)}</code> (100% local, zero external telemetry)</p>
   <div class="grid">
-    <div class="card"><div>Consultations</div><div class="val">{s['consultations']}</div></div>
-    <div class="card"><div>Symbols Reused</div><div class="val">{s['reused_symbols']}</div></div>
-    <div class="card"><div>Violations Prevented</div><div class="val">{s['violations_prevented']}</div></div>
-    <div class="card"><div>Est. Tokens Saved</div><div class="val">{s['estimated_tokens_saved']}</div></div>
+    <div class="card"><div>Consultations</div><div class="val">{s["consultations"]}</div></div>
+    <div class="card"><div>Symbols Reused</div><div class="val">{s["reused_symbols"]}</div></div>
+    <div class="card"><div>Violations Prevented</div><div class="val">{s["violations_prevented"]}</div></div>
+    <div class="card"><div>Est. Tokens Saved</div><div class="val">{s["estimated_tokens_saved"]}</div></div>
   </div>
 </body>
 </html>"""

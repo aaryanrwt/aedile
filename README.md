@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/pypi/v/aedile.svg" alt="PyPI Version"/>
   </a>
   <a href="https://www.python.org/">
-    <img src="https://img.shields.io/badge/python-3.11%20--%203.15-blue.svg" alt="Python Versions"/>
+    <img src="https://img.shields.io/badge/python-3.13%20--%203.15-blue.svg" alt="Python Versions"/>
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/>

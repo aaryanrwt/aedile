@@ -89,7 +89,9 @@ def main() -> int:
 
     out: dict[str, Any] = {"model": model, "modules": {}}
     for mod_name, prompt in PROMPTS:
-        consult = srv.handle_consult({"proposed_plan": prompt, "proposed_changes": []})["content"][0]["text"]
+        consult = srv.handle_consult({"proposed_plan": prompt, "proposed_changes": []})["content"][
+            0
+        ]["text"]
         aedile_sys = f"{aedile_map}\n\n{consult}"
         out["modules"][mod_name] = {}
 

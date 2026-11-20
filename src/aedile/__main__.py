@@ -178,7 +178,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_mode.add_argument("value", nargs="?", choices=VALID_MODES)
 
     # board
-    p_board = subparsers.add_parser("board", help="Show local telemetry summary or export HTML board.")
+    p_board = subparsers.add_parser(
+        "board", help="Show local telemetry summary or export HTML board."
+    )
     p_board.add_argument("--output", default=None)
 
     args = parser.parse_args(argv)
@@ -233,7 +235,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         with open(toml_path, "w", encoding="utf-8") as f:
             f.write(
                 f'[project]\nname = "{os.path.basename(project_root)}"\n'
-                f"src_dirs = {src_dirs!r}\nlanguages = [\"python\"]\n"
+                f'src_dirs = {src_dirs!r}\nlanguages = ["python"]\n'
             )
         print(f"[Aedile] Created {toml_path}")
         return 0

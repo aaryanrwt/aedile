@@ -42,9 +42,7 @@ class ScanCache:
         except Exception as e:
             raise CacheError(f"Failed to write scan cache to {self.cache_filepath}: {e}")
 
-    def get_by_stat(
-        self, filepath: str, mtime_ns: int, file_size: int
-    ) -> SourceFile | None:
+    def get_by_stat(self, filepath: str, mtime_ns: int, file_size: int) -> SourceFile | None:
         """Fast-path cache lookup using (mtime_ns, file_size) without hashing file bytes."""
         entry = self.entries.get(filepath)
         if not entry:
