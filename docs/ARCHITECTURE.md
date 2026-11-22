@@ -1,6 +1,6 @@
 # Aedile Architecture
 
-Aedile enforces a strict inward dependency flow with **zero external runtime dependencies** (Python `3.13–3.15` standard library only).
+Aedile enforces a strict inward dependency flow with **zero external runtime dependencies** (Python `3.15` standard library only).
 
 ```text
 Presentation (src/aedile/cli/, src/aedile/mcp/, src/aedile/__main__.py)

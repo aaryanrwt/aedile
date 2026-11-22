@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/pepy/dt/aedile?style=flat-square&color=111111&label=downloads" alt="Downloads"/>
   </a>
   <a href="https://www.python.org/">
-    <img src="https://img.shields.io/badge/python-3.13%20--%203.15-3776AB?style=flat-square" alt="Python Versions"/>
+    <img src="https://img.shields.io/badge/python-3.15-3776AB?style=flat-square" alt="Python 3.15"/>
   </a>
   <a href="https://github.com/astral-sh/ruff">
     <img src="https://img.shields.io/badge/code%20style-ruff-000000?style=flat-square" alt="Code Style: Ruff"/>
@@ -163,7 +163,7 @@ All benchmarks were executed locally with zero fabricated numbers:
 No. All AST parsing, graph simulation, profiling, caching, and telemetry stay 100% local.
 
 **Which languages and Python versions are supported?**
-Python `3.13–3.15` (including PEP 810 `lazy import` cycle awareness) via stdlib `ast`, plus zero-dependency structural parsers for TypeScript, JavaScript, Go, and Rust.
+Python `3.15` (including PEP 810 `lazy import` cycle awareness) via stdlib `ast`, plus zero-dependency structural parsers for TypeScript, JavaScript, Go, and Rust.
 
 **How do I adopt Aedile on an existing repo without fixing old violations first?**
 Run `aedile check --update-baseline`, then gate CI with `aedile check --baseline` so only *new* regressions fail the build.

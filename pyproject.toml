@@ -7,28 +7,50 @@ name = "aedile"
 version = "1.1.0"
 description = "Maintains architectural integrity as AI writes code."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 license = { text = "MIT" }
 authors = [
-    { name = "Aaryan Rawat", email = "aaryan.rawat@example.com" }
+    { name = "Aaryan Rawat" }
+]
+keywords = [
+    "ai",
+    "mcp",
+    "architecture",
+    "static-analysis",
+    "ast",
+    "token-compression",
+    "coding-agent",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/aaryanrwt/aedile"
+Repository = "https://github.com/aaryanrwt/aedile"
+Documentation = "https://github.com/aaryanrwt/aedile#readme"
+Issues = "https://github.com/aaryanrwt/aedile/issues"
+Changelog = "https://github.com/aaryanrwt/aedile/blob/main/CHANGELOG.md"
+
 [project.scripts]
 aedile = "aedile.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aedile"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src/aedile",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

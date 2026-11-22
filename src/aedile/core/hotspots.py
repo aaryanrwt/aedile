@@ -34,6 +34,14 @@ def _estimate_portability(filepath: str, name: str) -> float:
     return 1.0
 
 
+def _safe_relpath(filepath: str, abs_root: str) -> str:
+    """Return forward-slash relative path, or normalized abspath across Windows drives."""
+    try:
+        return os.path.relpath(filepath, abs_root).replace(os.sep, "/")
+    except ValueError:
+        return os.path.abspath(filepath).replace(os.sep, "/")
+
+
 def rank_hotspots(stats: pstats.Stats, wall_seconds: float, project_root: str) -> list[Hotspot]:
     """Ranks profiled functions by `cumtime_share * portability` and marks `covered_by`."""
     abs_root = os.path.abspath(project_root)
@@ -45,7 +53,7 @@ def rank_hotspots(stats: pstats.Stats, wall_seconds: float, project_root: str) -
     for (filepath, line, name), (cc, nc, tt, ct, _callers) in raw_stats.items():
         if not filepath or not os.path.abspath(filepath).startswith(abs_root):
             continue
-        rel = os.path.relpath(filepath, abs_root).replace(os.sep, "/")
+        rel = _safe_relpath(filepath, abs_root)
         share = min(1.0, max(0.0, ct / wall_seconds)) if wall_seconds > 0 else 0.0
         port = _estimate_portability(filepath, name)
         score = round(share * port, 4)
@@ -68,18 +76,14 @@ def rank_hotspots(stats: pstats.Stats, wall_seconds: float, project_root: str) -
     for h in items:
         key_tuple = None
         for k in raw_stats:
-            if (
-                os.path.relpath(k[0], abs_root).replace(os.sep, "/") == h.filepath
-                and k[1] == h.line
-                and k[2] == h.name
-            ):
+            if _safe_relpath(k[0], abs_root) == h.filepath and k[1] == h.line and k[2] == h.name:
                 key_tuple = k
                 break
         if key_tuple is None:
             continue
         callers = raw_stats[key_tuple][4]
         for caller_key in callers:
-            c_rel = os.path.relpath(caller_key[0], abs_root).replace(os.sep, "/")
+            c_rel = _safe_relpath(caller_key[0], abs_root)
             if c_rel == h.filepath and caller_key[2] != h.name:
                 c_ct = raw_stats.get(caller_key, (0, 0, 0.0, 0.0, {}))[3]
                 c_share = c_ct / wall_seconds if wall_seconds > 0 else 0.0
