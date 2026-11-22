@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/logo.jpg" alt="Aedile Mascot Logo" width="200"/>
+  <img src="images/logo.png" alt="Aedile Mascot Logo" width="200"/>
 </p>
 
 <h1 align="center">Aedile</h1>
