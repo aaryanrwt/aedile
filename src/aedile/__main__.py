@@ -8,6 +8,7 @@ from aedile import __version__
 from aedile.cli.doctor import format_doctor, run_doctor
 from aedile.cli.setup import VALID_MODES, get_intensity_mode, set_intensity_mode, setup_agents
 from aedile.core.baseline import BaselineManager
+from aedile.core.compressor import recall_output, run_and_compress
 from aedile.core.debt import format_debt_ledger, scan_debt
 from aedile.core.graph_insights import (
     detect_communities,
@@ -229,6 +230,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     # doctor
     subparsers.add_parser("doctor", help="Check Python toolchain, cache, and agent integrations.")
 
+    # compress / recall / gain (RTK-style token-cutting proxy)
+    p_comp = subparsers.add_parser(
+        "compress", help="Run a command and compress its output to save LLM tokens."
+    )
+    p_comp.add_argument("cmd", nargs=argparse.REMAINDER)
+
+    p_recall = subparsers.add_parser(
+        "recall", help="Retrieve full raw output saved from a compressed failure."
+    )
+    p_recall.add_argument("hash_prefix")
+
+    subparsers.add_parser("gain", help="Show cumulative LLM token savings and reuse telemetry.")
+
     args = parser.parse_args(argv)
     project_root = os.getcwd()
 
@@ -358,6 +372,37 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "doctor":
         print(format_doctor(run_doctor(project_root)))
+        return 0
+    if args.command == "compress":
+        cmd = list(args.cmd)
+        if cmd and cmd[0] == "--":
+            cmd = cmd[1:]
+        if not cmd:
+            sys.stderr.write("Usage: aedile compress <command> [args...]\n")
+            return 2
+        rc, res = run_and_compress(cmd, project_root=project_root)
+        if res.compressed:
+            print(res.compressed)
+        sys.stderr.write(
+            f"[aedile compress:{res.filter_used}] {res.raw_tokens}->{res.compressed_tokens} tok "
+            f"(saved {res.tokens_saved}, {res.savings_pct}%)\n"
+        )
+        return rc
+    if args.command == "recall":
+        raw = recall_output(args.hash_prefix, project_root=project_root)
+        if raw is None:
+            sys.stderr.write(f"No recall log found for prefix '{args.hash_prefix}'.\n")
+            return 1
+        print(raw)
+        return 0
+    if args.command == "gain":
+        summary = TelemetryStore(project_root).summary()
+        print(
+            f"Aedile Gain: {summary['estimated_tokens_saved']:,} tokens saved | "
+            f"{summary['reused_symbols']} symbols reused | "
+            f"{summary['violations_prevented']} violations prevented | "
+            f"{summary['events']} tracked events"
+        )
         return 0
 
     # Default: Start MCP Server

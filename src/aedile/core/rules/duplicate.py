@@ -72,12 +72,19 @@ class DuplicateRule(BaseRule):
 
                 set_b = word_sets[sf_b.filepath]
 
-                # Jaccard Similarity index calculation
-                union_len = len(set_a.union(set_b))
+                # Mathematical Jaccard upper-bound: min(|A|,|B|) / max(|A|,|B|) >= threshold
+                len_a, len_b = len(set_a), len(set_b)
+                max_len = len_a if len_a >= len_b else len_b
+                min_len = len_b if len_a >= len_b else len_a
+                if max_len == 0 or (min_len / max_len) < self.config.duplicate_similarity_threshold:
+                    continue
+
+                inter_len = len(set_a & set_b)
+                union_len = len_a + len_b - inter_len
                 if union_len == 0:
                     continue
 
-                similarity = len(set_a.intersection(set_b)) / union_len
+                similarity = inter_len / union_len
 
                 if similarity >= self.config.duplicate_similarity_threshold:
                     # Avoid duplicate warnings: sort paths to form a unique key

@@ -1,0 +1,81 @@
+{
+  "repos": [
+    {
+      "repo": "yt-dlp",
+      "languages": [
+        "python"
+      ],
+      "files": 1043,
+      "edges": 3526,
+      "cycles": 2,
+      "communities": 22,
+      "bridges": 106,
+      "violations": 599,
+      "cold_scan_s": 21.383,
+      "warm_scan_s": 1.095,
+      "cache_speedup": "19.5x",
+      "rules_s": 15.767,
+      "insights_and_verify_s": 9.261,
+      "top_hub": "extractor._extractors",
+      "map_chars": 2027
+    },
+    {
+      "repo": "ollama",
+      "languages": [
+        "go"
+      ],
+      "files": 224,
+      "edges": 0,
+      "cycles": 0,
+      "communities": 221,
+      "bridges": 0,
+      "violations": 66,
+      "cold_scan_s": 10.97,
+      "warm_scan_s": 0.255,
+      "cache_speedup": "43.0x",
+      "rules_s": 1.188,
+      "insights_and_verify_s": 0.158,
+      "top_hub": "none",
+      "map_chars": 1874
+    },
+    {
+      "repo": "deno",
+      "languages": [
+        "rust",
+        "typescript"
+      ],
+      "files": 48,
+      "edges": 15,
+      "cycles": 0,
+      "communities": 34,
+      "bridges": 0,
+      "violations": 235,
+      "cold_scan_s": 2.211,
+      "warm_scan_s": 0.113,
+      "cache_speedup": "19.6x",
+      "rules_s": 0.516,
+      "insights_and_verify_s": 0.071,
+      "top_hub": "lib",
+      "map_chars": 1747
+    },
+    {
+      "repo": "react",
+      "languages": [
+        "javascript"
+      ],
+      "files": 246,
+      "edges": 129,
+      "cycles": 1,
+      "communities": 167,
+      "bridges": 5,
+      "violations": 36,
+      "cold_scan_s": 18.205,
+      "warm_scan_s": 0.199,
+      "cache_speedup": "91.5x",
+      "rules_s": 1.847,
+      "insights_and_verify_s": 0.735,
+      "top_hub": "__tests__.utils.ReactDOMServerIntegrationTestUtils",
+      "map_chars": 1291
+    }
+  ]
+}

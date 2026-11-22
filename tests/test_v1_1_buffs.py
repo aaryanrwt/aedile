@@ -349,3 +349,42 @@ def test_graph_insights_exporters_card_hotspots_doctor_and_audit() -> None:
         assert "python:" in doc
         audit_txt = format_audit(audit_repo(tmp, [], g2, [], Config()))
         assert "Healthy" in audit_txt
+
+
+def test_compressor_filters_and_recall() -> None:
+    from aedile.core.compressor import compress_output, recall_output
+
+    raw_pytest = (
+        "=== test session starts ===\n"
+        + ("tests/test_ok.py::test_one PASSED\n" * 40)
+        + "=== FAILURES ===\n"
+        + "___ test_broken ___\n"
+        + "    def test_broken():\n"
+        + "E   AssertionError: 1 != 2\n"
+        + "=== 1 failed, 40 passed in 0.12s ===\n"
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        res = compress_output(raw_pytest, command="pytest", exit_code=1, project_root=tmp)
+        assert res.filter_used == "pytest"
+        assert res.tokens_saved > 0
+        assert res.savings_pct > 50.0
+        assert "AssertionError" in res.compressed
+        assert res.recall_id is not None
+        assert recall_output(res.recall_id, project_root=tmp) == raw_pytest
+
+        raw_diff = (
+            "diff --git a/a.py b/a.py\n--- a/a.py\n+++ b/a.py\n@@ -1,20 +1,20 @@\n"
+            + (" unchanged context line\n" * 30)
+            + "+added_line = 1\n"
+        )
+        diff_res = compress_output(raw_diff, command="git diff", exit_code=0, project_root=tmp)
+        assert diff_res.filter_used == "git_diff"
+        assert "+added_line = 1" in diff_res.compressed
+        assert diff_res.tokens_saved > 0
+
+        # Help passthrough & never-worse invariant
+        help_res = compress_output("Usage: tool [OPTIONS]\n", command="tool --help", exit_code=0)
+        assert help_res.filter_used == "passthrough"
+        assert "Usage: tool" in help_res.compressed
+        small_res = compress_output("{}", command="custom", exit_code=0)
+        assert small_res.compressed_tokens <= small_res.raw_tokens

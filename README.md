@@ -40,11 +40,11 @@ Aedile is a zero-dependency engineering intelligence layer for AI coding assista
 
 ```mermaid
 flowchart TD
-    A(["Coding Agent<br/><i>Claude Code · Cursor · Codex · Windsurf</i>"]) -->|"Proposed plan: Build auth helper"| B{"Aedile MCP<br/><i>11 local tools</i>"}
+    A(["Coding Agent<br/><i>Claude Code · Cursor · Codex · Windsurf</i>"]) -->|"Proposed plan: Build auth helper"| B{"Aedile MCP<br/><i>12 local tools</i>"}
     B --> C["BM25 + AST Symbol Reuse<br/><i>aedile_consult · aedile_map</i>"]
     B --> D["Stdlib & Declared Deps<br/><i>tomllib · pyproject.toml</i>"]
     B --> E["Tarjan Cycle & Layer Gate<br/><i>PEP 810 lazy · add / modify / delete</i>"]
-    B --> F["Blast Radius & Hotspots<br/><i>god_nodes · cProfile · debt</i>"]
+    B --> F["Output Compression & Hotspots<br/><i>aedile_compress · recall · cProfile</i>"]
     C --> G(["Verified, Minimal Implementation"])
     D --> G
     E --> G
@@ -129,6 +129,8 @@ See [SUPPORTED_AGENTS.md](SUPPORTED_AGENTS.md) for manual Claude Code, Cursor, W
 | `aedile audit` | `aedile_audit` | Whole-repo ranked audit combining rules, hubs, and debt |
 | `aedile debt` | `aedile_debt` | Harvest `# shortcut:` / `# aedile-waive:` debt ledger |
 | `aedile hotspots <py>` | `aedile_hotspots` | `cProfile` hotspot ranker with `covered_by` outermost-caller detection |
+| `aedile compress <cmd>` | `aedile_compress` | Compress noisy `pytest`/`git diff`/`ruff`/`mypy` output + `.aedile/recall/` recovery |
+| `aedile recall <id>` / `gain` | — | Recover full raw failure logs and view cumulative token-savings telemetry |
 | `aedile check` | — | CI gate (`text`, `json`, `sarif`, `html`, `card`) with `--baseline` |
 | `aedile mode` / `board` / `doctor` | — | Intensity modes (`lite\|full\|ultra\|off`), local telemetry board, and diagnostics |
 
@@ -145,7 +147,13 @@ All benchmarks were executed locally with zero fabricated numbers:
    - Aedile vs. Ponytail (`AGENTS.md` + `ponytail-map.js`): **10/12 (83.3%)** vs. **2/12 (16.7%)** LLM hit rate, **11/12 (91.7%)** vs. **0/12** deterministic tool catches, and lower avg prompt tokens (**752.8** vs. **794.6**).
 3. **10 Production Repositories (50k+ Stars Each)** — [MEGA_10_REPO_VALIDATION.md](benchmarks/MEGA_10_REPO_VALIDATION.md):
    - Validated across `fastapi`, `flask`, `requests`, `yt-dlp`, `django`, `express`, `vite`, `nest`, `gin`, and `ripgrep` (**2,674** files, **5,367** edges): **915/923 (99.1%)** checks passed.
-4. **Core Test Suite**: **1,072** passing tests in `pytest` (`Python 3.15.2`, `ruff` + `mypy` strict clean).
+4. **100k+ Star Scale Benchmark** — [SCALE_100K_REPOS_ANALYSIS.md](benchmarks/SCALE_100K_REPOS_ANALYSIS.md):
+   - Measured across `yt-dlp`, `ollama`, `deno`, and `react` with **19.5x–91.5x** warm-cache speedups (`0.113s–1.095s` warm scans).
+5. **55-Test Token Savings & Pre-Write Gate** — [TOKEN_SAVINGS_50_TESTS.md](benchmarks/TOKEN_SAVINGS_50_TESTS.md):
+   - **62,429 / 82,411 (75.8%)** CLI output tokens saved across 30 real `pytest`/`git`/`ruff`/`mypy`/`aedile` runs + **807,108 / 807,570 (99.9%)** pre-write context tokens saved across 25 `aedile_consult` & `verify` checks.
+6. **4-Way Real LLM Comparison (`qwen3:4b`: Aedile vs. RTK vs. Ponytail vs. Baseline)** — [FOUR_WAY_BENCHMARK.md](benchmarks/FOUR_WAY_BENCHMARK.md):
+   - **43,860 / 47,278 (92.8%)** total tokens saved (**169.7** avg prompt tokens vs. **7,479.7** baseline and **6,709.7** RTK) on the playable [Tesla Roadster Skyline](examples/tesla_roadster_game/main.py) `.exe` demo (`0.0268 ms/frame` across 1,000 simulated frames).
+7. **Core Test Suite**: **1,073** passing tests in `pytest` (`Python 3.15.2`, `ruff` + `mypy` strict clean).
 
 ---
 
@@ -170,7 +178,8 @@ Run `aedile check --update-baseline`, then gate CI with `aedile check --baseline
 - [FAQ](docs/FAQ.md)
 - [Supported Agents](SUPPORTED_AGENTS.md)
 - [Roadmap](ROADMAP.md)
-- [REA Research Analyses](docs/research/REA_ANALYSIS_GRAPHIFY.md)
+- [REA Research: Graphify](docs/research/REA_ANALYSIS_GRAPHIFY.md)
+- [REA Research: RTK](docs/research/REA_ANALYSIS_RTK.md)
 - [Changelog](CHANGELOG.md)
 - [Security Policy](SECURITY.md)
 

@@ -1,0 +1,65 @@
+{
+  "model": "qwen3:4b",
+  "builds": [
+    {
+      "variant": "Without Anything",
+      "exe_name": "Roadster_WithoutAnything.exe",
+      "exe_mb": 13.02,
+      "launched_ok": true,
+      "prompt_tokens": 6430,
+      "generated_tokens": 1200,
+      "total_tokens": 7630,
+      "generated_loc": 0,
+      "qwen_valid_hook": false,
+      "gen_s": 39.51,
+      "pyinstaller_rc": 0,
+      "saved_vs_baseline": 0,
+      "reduction_pct": 0.0
+    },
+    {
+      "variant": "Ponytail",
+      "exe_name": "Roadster_Ponytail.exe",
+      "exe_mb": 13.02,
+      "launched_ok": true,
+      "prompt_tokens": 858,
+      "generated_tokens": 898,
+      "total_tokens": 1756,
+      "generated_loc": 5,
+      "qwen_valid_hook": true,
+      "gen_s": 20.36,
+      "pyinstaller_rc": 0,
+      "saved_vs_baseline": 5874,
+      "reduction_pct": 77.0
+    },
+    {
+      "variant": "RTK (rtk-ai/rtk)",
+      "exe_name": "Roadster_RTK.exe",
+      "exe_mb": 13.02,
+      "launched_ok": true,
+      "prompt_tokens": 5746,
+      "generated_tokens": 1200,
+      "total_tokens": 6946,
+      "generated_loc": 0,
+      "qwen_valid_hook": false,
+      "gen_s": 30.76,
+      "pyinstaller_rc": 0,
+      "saved_vs_baseline": 684,
+      "reduction_pct": 9.0
+    },
+    {
+      "variant": "Aedile",
+      "exe_name": "Roadster_Aedile.exe",
+      "exe_mb": 13.02,
+      "launched_ok": true,
+      "prompt_tokens": 189,
+      "generated_tokens": 1200,
+      "total_tokens": 1389,
+      "generated_loc": 0,
+      "qwen_valid_hook": false,
+      "gen_s": 24.69,
+      "pyinstaller_rc": 0,
+      "saved_vs_baseline": 6241,
+      "reduction_pct": 81.8
+    }
+  ]
+}

@@ -81,30 +81,29 @@ class DeadCodeRule(BaseRule):
                 else:
                     defined_symbols.append((sf, module_name, sym))
 
+        # Pre-index identifier occurrences and module imports in O(total_tokens) instead of O(symbols * files).
+        ident_files: dict[str, set[str]] = {}
+        wildcard_importers: dict[str, set[str]] = {}
+        for sf_other in files:
+            content_other = file_contents.get(sf_other.filepath, "")
+            if content_other:
+                for tok in set(re.findall(r"\b\w+\b", content_other)):
+                    ident_files.setdefault(tok, set()).add(sf_other.filepath)
+            for imp in sf_other.imports:
+                if not imp.names:
+                    wildcard_importers.setdefault(imp.module, set()).add(sf_other.filepath)
+
         # Check usages for public symbols in other files
         for sf_def, mod_def, sym in defined_symbols:
-            is_used = False
-
-            # Check if explicitly imported or referenced by name in any OTHER file
-            for sf_other in files:
-                if sf_other.filepath == sf_def.filepath:
-                    continue
-
-                # 1. Check explicit import
-                for imp in sf_other.imports:
-                    # Imports the module containing the symbol
-                    if imp.module == mod_def or imp.module.startswith(mod_def + "."):
-                        if not imp.names or sym.name in imp.names:
+            ref_files = ident_files.get(sym.name)
+            is_used = bool(ref_files and any(fp != sf_def.filepath for fp in ref_files))
+            if not is_used:
+                # Fallback: check wildcard/module-level imports
+                for mod_key, importers in wildcard_importers.items():
+                    if mod_key == mod_def or mod_key.startswith(mod_def + "."):
+                        if any(fp != sf_def.filepath for fp in importers):
                             is_used = True
                             break
-                if is_used:
-                    break
-
-                # 2. Check text reference (token word boundary match)
-                content_other = file_contents.get(sf_other.filepath, "")
-                if content_other and re.search(r"\b" + re.escape(sym.name) + r"\b", content_other):
-                    is_used = True
-                    break
 
             if not is_used:
                 violations.append(

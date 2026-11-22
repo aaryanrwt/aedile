@@ -271,6 +271,24 @@ class AedileMcpServer:
         findings = audit_repo(self.project_root, self.files, graph, violations, self.config)
         return {"content": [{"type": "text", "text": format_audit(findings)}]}
 
+    def handle_compress(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        from aedile.core.compressor import compress_output
+
+        raw = str(arguments.get("raw", ""))
+        command = str(arguments.get("command", ""))
+        exit_code = int(arguments.get("exit_code", 0))
+        res = compress_output(
+            raw=raw,
+            command=command,
+            exit_code=exit_code,
+            project_root=self.project_root,
+        )
+        header = (
+            f"[aedile_compress:{res.filter_used}] {res.raw_tokens}->{res.compressed_tokens} tok "
+            f"(saved {res.tokens_saved}, {res.savings_pct}%)"
+        )
+        return {"content": [{"type": "text", "text": f"{header}\n{res.compressed}"}]}
+
     def _tool_catalog(self) -> list[dict[str, Any]]:
         """Compact tool schemas minimizing agent context overhead."""
         return [
@@ -402,6 +420,19 @@ class AedileMcpServer:
                     "required": ["script"],
                 },
             },
+            {
+                "name": "aedile_compress",
+                "description": "Compress noisy CLI/tool output (pytest, git diff, ruff, mypy) and track token savings.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "raw": {"type": "string"},
+                        "command": {"type": "string"},
+                        "exit_code": {"type": "integer"},
+                    },
+                    "required": ["raw"],
+                },
+            },
         ]
 
     def run(self) -> None:
@@ -419,6 +450,7 @@ class AedileMcpServer:
             "aedile_insights": self.handle_insights,
             "aedile_audit": self.handle_audit,
             "aedile_hotspots": self.handle_hotspots,
+            "aedile_compress": self.handle_compress,
         }
         while True:
             try:

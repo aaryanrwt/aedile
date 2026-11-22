@@ -1,0 +1,311 @@
+{
+  "model": "qwen3:4b",
+  "summary": {
+    "without_anything": {
+      "tasks": 6,
+      "total_tokens": 47278,
+      "avg_prompt_tokens": 7479.7,
+      "avg_loc": 16.0,
+      "reuse_hits": 6,
+      "syntax_valid": 1,
+      "tokens_saved_vs_baseline": 0,
+      "reduction_pct": 0.0
+    },
+    "ponytail": {
+      "tasks": 6,
+      "total_tokens": 8020,
+      "avg_prompt_tokens": 936.7,
+      "avg_loc": 17.8,
+      "reuse_hits": 4,
+      "syntax_valid": 0,
+      "tokens_saved_vs_baseline": 39258,
+      "reduction_pct": 83.0
+    },
+    "rtk": {
+      "tasks": 6,
+      "total_tokens": 42658,
+      "avg_prompt_tokens": 6709.7,
+      "avg_loc": 13.0,
+      "reuse_hits": 5,
+      "syntax_valid": 1,
+      "tokens_saved_vs_baseline": 4620,
+      "reduction_pct": 9.8
+    },
+    "aedile": {
+      "tasks": 6,
+      "total_tokens": 3418,
+      "avg_prompt_tokens": 169.7,
+      "avg_loc": 18.7,
+      "reuse_hits": 4,
+      "syntax_valid": 0,
+      "tokens_saved_vs_baseline": 43860,
+      "reduction_pct": 92.8
+    }
+  },
+  "runs": [
+    {
+      "mode": "without_anything",
+      "task": "Thruster flight & battery step",
+      "prompt_tokens": 7484,
+      "generated_tokens": 400,
+      "total_tokens": 7884,
+      "loc": 21,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 26.54
+    },
+    {
+      "mode": "without_anything",
+      "task": "Hitbox AABB collision check",
+      "prompt_tokens": 7479,
+      "generated_tokens": 400,
+      "total_tokens": 7879,
+      "loc": 5,
+      "reused": true,
+      "syntax_ok": true,
+      "elapsed_s": 11.98
+    },
+    {
+      "mode": "without_anything",
+      "task": "Thruster particle emission",
+      "prompt_tokens": 7478,
+      "generated_tokens": 400,
+      "total_tokens": 7878,
+      "loc": 22,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 12.2
+    },
+    {
+      "mode": "without_anything",
+      "task": "World entity scroll & cull",
+      "prompt_tokens": 7484,
+      "generated_tokens": 400,
+      "total_tokens": 7884,
+      "loc": 18,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 12.21
+    },
+    {
+      "mode": "without_anything",
+      "task": "JSON high-score persistence",
+      "prompt_tokens": 7471,
+      "generated_tokens": 400,
+      "total_tokens": 7871,
+      "loc": 12,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 12.26
+    },
+    {
+      "mode": "without_anything",
+      "task": "HUD Mach & altitude formatter",
+      "prompt_tokens": 7482,
+      "generated_tokens": 400,
+      "total_tokens": 7882,
+      "loc": 18,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 12.16
+    },
+    {
+      "mode": "ponytail",
+      "task": "Thruster flight & battery step",
+      "prompt_tokens": 941,
+      "generated_tokens": 400,
+      "total_tokens": 1341,
+      "loc": 19,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 10.84
+    },
+    {
+      "mode": "ponytail",
+      "task": "Hitbox AABB collision check",
+      "prompt_tokens": 936,
+      "generated_tokens": 400,
+      "total_tokens": 1336,
+      "loc": 13,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 9.98
+    },
+    {
+      "mode": "ponytail",
+      "task": "Thruster particle emission",
+      "prompt_tokens": 935,
+      "generated_tokens": 400,
+      "total_tokens": 1335,
+      "loc": 19,
+      "reused": false,
+      "syntax_ok": false,
+      "elapsed_s": 9.77
+    },
+    {
+      "mode": "ponytail",
+      "task": "World entity scroll & cull",
+      "prompt_tokens": 941,
+      "generated_tokens": 400,
+      "total_tokens": 1341,
+      "loc": 18,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 9.79
+    },
+    {
+      "mode": "ponytail",
+      "task": "JSON high-score persistence",
+      "prompt_tokens": 928,
+      "generated_tokens": 400,
+      "total_tokens": 1328,
+      "loc": 17,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 9.89
+    },
+    {
+      "mode": "ponytail",
+      "task": "HUD Mach & altitude formatter",
+      "prompt_tokens": 939,
+      "generated_tokens": 400,
+      "total_tokens": 1339,
+      "loc": 21,
+      "reused": false,
+      "syntax_ok": false,
+      "elapsed_s": 9.87
+    },
+    {
+      "mode": "rtk",
+      "task": "Thruster flight & battery step",
+      "prompt_tokens": 6714,
+      "generated_tokens": 400,
+      "total_tokens": 7114,
+      "loc": 14,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 12.89
+    },
+    {
+      "mode": "rtk",
+      "task": "Hitbox AABB collision check",
+      "prompt_tokens": 6709,
+      "generated_tokens": 400,
+      "total_tokens": 7109,
+      "loc": 5,
+      "reused": true,
+      "syntax_ok": true,
+      "elapsed_s": 12.17
+    },
+    {
+      "mode": "rtk",
+      "task": "Thruster particle emission",
+      "prompt_tokens": 6708,
+      "generated_tokens": 400,
+      "total_tokens": 7108,
+      "loc": 12,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 11.95
+    },
+    {
+      "mode": "rtk",
+      "task": "World entity scroll & cull",
+      "prompt_tokens": 6714,
+      "generated_tokens": 400,
+      "total_tokens": 7114,
+      "loc": 10,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 11.92
+    },
+    {
+      "mode": "rtk",
+      "task": "JSON high-score persistence",
+      "prompt_tokens": 6701,
+      "generated_tokens": 400,
+      "total_tokens": 7101,
+      "loc": 16,
+      "reused": false,
+      "syntax_ok": false,
+      "elapsed_s": 11.77
+    },
+    {
+      "mode": "rtk",
+      "task": "HUD Mach & altitude formatter",
+      "prompt_tokens": 6712,
+      "generated_tokens": 400,
+      "total_tokens": 7112,
+      "loc": 21,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 12.02
+    },
+    {
+      "mode": "aedile",
+      "task": "Thruster flight & battery step",
+      "prompt_tokens": 174,
+      "generated_tokens": 400,
+      "total_tokens": 574,
+      "loc": 23,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 10.2
+    },
+    {
+      "mode": "aedile",
+      "task": "Hitbox AABB collision check",
+      "prompt_tokens": 169,
+      "generated_tokens": 400,
+      "total_tokens": 569,
+      "loc": 19,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 9.67
+    },
+    {
+      "mode": "aedile",
+      "task": "Thruster particle emission",
+      "prompt_tokens": 168,
+      "generated_tokens": 400,
+      "total_tokens": 568,
+      "loc": 19,
+      "reused": false,
+      "syntax_ok": false,
+      "elapsed_s": 9.5
+    },
+    {
+      "mode": "aedile",
+      "task": "World entity scroll & cull",
+      "prompt_tokens": 174,
+      "generated_tokens": 400,
+      "total_tokens": 574,
+      "loc": 17,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 9.87
+    },
+    {
+      "mode": "aedile",
+      "task": "JSON high-score persistence",
+      "prompt_tokens": 161,
+      "generated_tokens": 400,
+      "total_tokens": 561,
+      "loc": 17,
+      "reused": true,
+      "syntax_ok": false,
+      "elapsed_s": 9.65
+    },
+    {
+      "mode": "aedile",
+      "task": "HUD Mach & altitude formatter",
+      "prompt_tokens": 172,
+      "generated_tokens": 400,
+      "total_tokens": 572,
+      "loc": 17,
+      "reused": false,
+      "syntax_ok": false,
+      "elapsed_s": 9.53
+    }
+  ]
+}

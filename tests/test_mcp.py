@@ -215,7 +215,7 @@ def test_mcp_server_loop(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Verify tools list registers all Aedile MCP tools
     tools = res_tools["result"]["tools"]
-    assert len(tools) == 11
+    assert len(tools) == 12
     assert tools[0]["name"] == "aedile_consult"
 
     # Verify consult output matches consolidated results

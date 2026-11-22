@@ -60,7 +60,21 @@ class Scanner:
                 logger.warning(f"Source directory not found: {full_src_path}")
                 continue
 
-            for root, _, files in os.walk(full_src_path):
+            skip_dirs = {
+                ".git",
+                "node_modules",
+                "__pycache__",
+                ".venv",
+                "venv",
+                "target",
+                "dist",
+                "build",
+                ".tox",
+                ".mypy_cache",
+                ".ruff_cache",
+            }
+            for root, dirs, files in os.walk(full_src_path):
+                dirs[:] = [d for d in dirs if d not in skip_dirs]
                 for file in files:
                     filepath = os.path.join(root, file)
                     lang = LanguageDetector.detect(filepath)
