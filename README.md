@@ -38,23 +38,17 @@ Aedile is a zero-dependency engineering intelligence layer for AI coding assista
 
 ---
 
-```text
-          Coding Agent
-               │
-               ▼
-       "Build auth helper"
-               │
-               ▼
-         Aedile MCP (11 tools)
-      ┌──────────────────────────────────┐
-      │ Existing symbol? (BM25 + AST)    │
-      │ Stdlib / declared dependency?    │
-      │ Tarjan import cycle? (PEP 810)   │
-      │ Layer / delete / blast radius?   │
-      └──────────────────────────────────┘
-               │
-               ▼
-   Verified, minimal implementation
+```mermaid
+flowchart TD
+    A(["Coding Agent<br/><i>Claude Code · Cursor · Codex · Windsurf</i>"]) -->|"Proposed plan: Build auth helper"| B{"Aedile MCP<br/><i>11 local tools</i>"}
+    B --> C["BM25 + AST Symbol Reuse<br/><i>aedile_consult · aedile_map</i>"]
+    B --> D["Stdlib & Declared Deps<br/><i>tomllib · pyproject.toml</i>"]
+    B --> E["Tarjan Cycle & Layer Gate<br/><i>PEP 810 lazy · add / modify / delete</i>"]
+    B --> F["Blast Radius & Hotspots<br/><i>god_nodes · cProfile · debt</i>"]
+    C --> G(["Verified, Minimal Implementation"])
+    D --> G
+    E --> G
+    F --> G
 ```
 
 ---
