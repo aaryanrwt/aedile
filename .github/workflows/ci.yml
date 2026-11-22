@@ -53,7 +53,9 @@ jobs:
       run: mypy src/
 
     - name: Run Pytest Suite
-      run: pytest --cov=src --cov-report=xml
+      env:
+        PYTHONPATH: src
+      run: python -m pytest --cov=src/aedile --cov-report=xml
 
     - name: Verify Aedile CLI Rule Compiler
       run: python -m aedile compile-rules
