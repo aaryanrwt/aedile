@@ -283,3 +283,44 @@ class ArchitectureGraph:
 
         svg_lines.append("</svg>")
         return "\n".join(svg_lines)
+
+    def export_graphml(self) -> str:
+        """Exports the dependency graph as GraphML XML for Gephi / yEd."""
+        import html as _html
+
+        lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<graphml xmlns="http://graphml.graphdrawing.org/xmlns">',
+            '  <key id="d0" for="edge" attr.name="is_lazy" attr.type="boolean"/>',
+            '  <graph id="aedile" edgedefault="directed">',
+        ]
+        for node in sorted(self.nodes):
+            lines.append(f'    <node id="{_html.escape(node)}"/>')
+        edge_id = 0
+        for src in sorted(self.edges.keys()):
+            for dst in sorted(self.edges[src]):
+                lazy = "true" if self.edge_lazy.get((src, dst), False) else "false"
+                lines.append(
+                    f'    <edge id="e{edge_id}" source="{_html.escape(src)}" '
+                    f'target="{_html.escape(dst)}"><data key="d0">{lazy}</data></edge>'
+                )
+                edge_id += 1
+        lines.extend(["  </graph>", "</graphml>"])
+        return "\n".join(lines)
+
+    def export_cypher(self) -> str:
+        """Exports Cypher MERGE statements for Neo4j / FalkorDB."""
+        lines: list[str] = []
+        for node in sorted(self.nodes):
+            safe = node.replace("'", "\\'")
+            lines.append(f"MERGE (:Module {{name: '{safe}'}});")
+        for src in sorted(self.edges.keys()):
+            s_safe = src.replace("'", "\\'")
+            for dst in sorted(self.edges[src]):
+                d_safe = dst.replace("'", "\\'")
+                lazy = str(self.edge_lazy.get((src, dst), False)).lower()
+                lines.append(
+                    f"MATCH (a:Module {{name: '{s_safe}'}}), (b:Module {{name: '{d_safe}'}}) "
+                    f"MERGE (a)-[:IMPORTS {{is_lazy: {lazy}}}]->(b);"
+                )
+        return "\n".join(lines)

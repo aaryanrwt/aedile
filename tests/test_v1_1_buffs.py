@@ -5,18 +5,28 @@ import tempfile
 
 import pytest
 
+from aedile.cli.doctor import format_doctor, run_doctor
 from aedile.cli.setup import get_intensity_mode, set_intensity_mode, setup_agents
 from aedile.core.baseline import BaselineManager
 from aedile.core.debt import format_debt_ledger, scan_debt
 from aedile.core.graph import ArchitectureGraph
+from aedile.core.graph_insights import (
+    detect_communities,
+    explain_module,
+    god_nodes,
+    graph_diff,
+    suggest_questions,
+    surprising_connections,
+)
+from aedile.core.hotspots import profile_target
 from aedile.core.inference import infer_layers
 from aedile.core.mapper import build_codebase_map
 from aedile.core.models import Import, ProjectMetrics, Report, SourceFile, Symbol, Violation
 from aedile.core.monorepo import check_cross_package_boundaries, discover_workspace_packages
 from aedile.core.plugins import load_custom_rules
 from aedile.core.polyglot import PolyglotParser
-from aedile.core.reporter import to_html, to_json, to_sarif
-from aedile.core.reviewer import format_review, review_changes
+from aedile.core.reporter import to_card_svg, to_html, to_json, to_sarif
+from aedile.core.reviewer import audit_repo, format_audit, format_review, review_changes
 from aedile.core.rules.cycle import CycleRule
 from aedile.core.verifier import ArchitectureVerifier
 from aedile.infrastructure.telemetry import TelemetryStore
@@ -291,3 +301,51 @@ def test_plugins_monorepo_watcher_telemetry_and_setup() -> None:
             "0 violations"
             in srv.handle_verify_architecture({"proposed_changes": []})["content"][0]["text"]
         )
+
+
+def test_graph_insights_exporters_card_hotspots_doctor_and_audit() -> None:
+    g1 = ArchitectureGraph()
+    g1.add_edge("a", "b")
+    g1.add_edge("b", "c")
+    g1.add_edge("d", "b")
+    g2 = ArchitectureGraph()
+    g2.add_edge("a", "b")
+    g2.add_edge("b", "c")
+    g2.add_edge("d", "b")
+    g2.add_edge("e", "b")
+
+    hubs = god_nodes(g2, top_n=2)
+    assert hubs[0]["module"] == "b"
+    comms = detect_communities(g2)
+    assert len(comms) >= 1
+    _ = surprising_connections(g2, comms)
+    qs = suggest_questions(g2, comms)
+    assert len(qs) >= 1
+    info = explain_module(g2, "b")
+    assert info["found"] is True and "a" in info["imported_by"]
+    diff = graph_diff(g1, g2)
+    assert "e" in diff["added_nodes"]
+    assert "<graphml" in g2.export_graphml()
+    assert "MERGE (:Module" in g2.export_cypher()
+
+    report = Report(
+        project_name="Demo",
+        violations=[],
+        metrics=ProjectMetrics(total_files=4, total_loc=40, total_violations=0, risk_score=0.0),
+        generated_at="2026-11-22",
+        scan_time_seconds=0.02,
+    )
+    assert "<svg" in to_card_svg(report)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        script = os.path.join(tmp, "work.py")
+        with open(script, "w", encoding="utf-8") as f:
+            f.write(
+                "def busy():\n    return sum(range(500))\nif __name__ == '__main__':\n    busy()\n"
+            )
+        wall, spots = profile_target(script, tmp)
+        assert wall > 0 and any(s.name == "busy" for s in spots)
+        doc = format_doctor(run_doctor(tmp))
+        assert "python:" in doc
+        audit_txt = format_audit(audit_repo(tmp, [], g2, [], Config()))
+        assert "Healthy" in audit_txt

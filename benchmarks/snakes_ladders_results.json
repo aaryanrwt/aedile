@@ -1,0 +1,141 @@
+{
+  "model": "qwen3:4b",
+  "game_generation": {
+    "snakes_engine": {
+      "ponytail": {
+        "prompt_tokens": 114,
+        "output_tokens": 1400,
+        "elapsed_s": 43.74,
+        "loc": 94,
+        "ast_valid": false
+      },
+      "aedile": {
+        "prompt_tokens": 515,
+        "output_tokens": 1400,
+        "elapsed_s": 29.07,
+        "loc": 78,
+        "ast_valid": false
+      }
+    },
+    "snakes_ui": {
+      "ponytail": {
+        "prompt_tokens": 103,
+        "output_tokens": 1400,
+        "elapsed_s": 28.93,
+        "loc": 77,
+        "ast_valid": false
+      },
+      "aedile": {
+        "prompt_tokens": 415,
+        "output_tokens": 1400,
+        "elapsed_s": 28.7,
+        "loc": 69,
+        "ast_valid": false
+      }
+    }
+  },
+  "core_mechanism": [
+    {
+      "id": "mech_01_yagni_duplicate_cache",
+      "expected": "ScanCache",
+      "ponytail": {
+        "prompt_tokens": 66,
+        "output_tokens": 160,
+        "elapsed_s": 5.27,
+        "model_caught": true
+      },
+      "aedile": {
+        "prompt_tokens": 737,
+        "output_tokens": 160,
+        "elapsed_s": 5.51,
+        "model_caught": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "mech_02_reuse_mapper",
+      "expected": "build_codebase_map",
+      "ponytail": {
+        "prompt_tokens": 69,
+        "output_tokens": 160,
+        "elapsed_s": 5.2,
+        "model_caught": false
+      },
+      "aedile": {
+        "prompt_tokens": 381,
+        "output_tokens": 160,
+        "elapsed_s": 5.37,
+        "model_caught": false,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "mech_03_stdlib_sqlite",
+      "expected": "sqlite3",
+      "ponytail": {
+        "prompt_tokens": 61,
+        "output_tokens": 160,
+        "elapsed_s": 5.15,
+        "model_caught": true
+      },
+      "aedile": {
+        "prompt_tokens": 460,
+        "output_tokens": 160,
+        "elapsed_s": 5.24,
+        "model_caught": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "mech_04_block_layer_violation",
+      "expected": "layer",
+      "ponytail": {
+        "prompt_tokens": 65,
+        "output_tokens": 160,
+        "elapsed_s": 5.17,
+        "model_caught": false
+      },
+      "aedile": {
+        "prompt_tokens": 1081,
+        "output_tokens": 160,
+        "elapsed_s": 5.69,
+        "model_caught": false,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "mech_05_block_cycle",
+      "expected": "cycle",
+      "ponytail": {
+        "prompt_tokens": 63,
+        "output_tokens": 160,
+        "elapsed_s": 5.27,
+        "model_caught": false
+      },
+      "aedile": {
+        "prompt_tokens": 1271,
+        "output_tokens": 160,
+        "elapsed_s": 5.8,
+        "model_caught": true,
+        "tool_caught": true
+      }
+    },
+    {
+      "id": "mech_06_block_unsafe_delete",
+      "expected": "dangling",
+      "ponytail": {
+        "prompt_tokens": 63,
+        "output_tokens": 160,
+        "elapsed_s": 5.34,
+        "model_caught": false
+      },
+      "aedile": {
+        "prompt_tokens": 1778,
+        "output_tokens": 160,
+        "elapsed_s": 6.05,
+        "model_caught": true,
+        "tool_caught": true
+      }
+    }
+  ]
+}

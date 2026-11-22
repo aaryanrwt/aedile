@@ -7,11 +7,19 @@ from typing import Any
 from aedile import __version__
 from aedile.core.debt import format_debt_ledger, scan_debt
 from aedile.core.graph import ArchitectureGraph
+from aedile.core.graph_insights import (
+    detect_communities,
+    explain_module,
+    god_nodes,
+    suggest_questions,
+    surprising_connections,
+)
+from aedile.core.hotspots import profile_target
 from aedile.core.inference import infer_layers
 from aedile.core.mapper import build_codebase_map
 from aedile.core.models import SourceFile
 from aedile.core.optimizer import ReasoningOptimizer
-from aedile.core.reviewer import format_review, review_changes
+from aedile.core.reviewer import audit_repo, format_audit, format_review, review_changes
 from aedile.core.scanner import Scanner
 from aedile.core.similarity import SimilarityEngine
 from aedile.core.verifier import ArchitectureVerifier
@@ -189,6 +197,80 @@ class AedileMcpServer:
         entries = scan_debt(self.project_root, self.config, custom_marker=marker)
         return {"content": [{"type": "text", "text": format_debt_ledger(entries)}]}
 
+    def handle_explain(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        self.refresh_index()
+        graph = self.graph or ArchitectureGraph()
+        info = explain_module(graph, str(arguments.get("module", "")))
+        if not info["found"]:
+            return {
+                "content": [
+                    {"type": "text", "text": f"Module not found. Candidates: {info['candidates']}"}
+                ]
+            }
+        text = (
+            f"Module: {info['module']}\nMetrics: {info['metrics']}\n"
+            f"Imports: {', '.join(info['imports']) or 'none'}\n"
+            f"Imported by: {', '.join(info['imported_by']) or 'none'}\n"
+            f"Blast radius ({len(info['blast_radius'])}): {', '.join(info['blast_radius']) or 'none'}"
+        )
+        return {"content": [{"type": "text", "text": text}]}
+
+    def handle_path(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        self.refresh_index()
+        graph = self.graph or ArchitectureGraph()
+        src = str(arguments.get("source", ""))
+        dst = str(arguments.get("target", ""))
+        path = graph.find_shortest_path(src, dst)
+        if not path:
+            return {"content": [{"type": "text", "text": f"No path from {src} to {dst}."}]}
+        hops = []
+        for i in range(len(path) - 1):
+            tag = "LAZY" if graph.edge_lazy.get((path[i], path[i + 1]), False) else "EXTRACTED"
+            hops.append(f"{path[i]} --[{tag}]--> {path[i + 1]}")
+        return {"content": [{"type": "text", "text": " | ".join(hops)}]}
+
+    def handle_hotspots(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        script = str(arguments.get("script", ""))
+        if not script:
+            return {
+                "content": [{"type": "text", "text": "Error: 'script' is required."}],
+                "isError": True,
+            }
+        target = os.path.realpath(os.path.join(self.project_root, script))
+        root_real = os.path.realpath(self.project_root)
+        if not target.startswith(root_real + os.sep) and target != root_real:
+            return {
+                "content": [{"type": "text", "text": "Error: script escapes project root."}],
+                "isError": True,
+            }
+        wall, spots = profile_target(target, self.project_root)
+        lines = [f"Profiled {script} in {wall}s ({len(spots)} functions):"]
+        for h in spots[:10]:
+            cov = f" [covered_by={h.covered_by}]" if h.covered_by else ""
+            lines.append(f"- {h.func_id}:L{h.line} share={h.share:.1%} score={h.score}{cov}")
+        return {"content": [{"type": "text", "text": "\n".join(lines)}]}
+
+    def handle_insights(self, _arguments: dict[str, Any]) -> dict[str, Any]:
+        self.refresh_index()
+        graph = self.graph or ArchitectureGraph()
+        comms = detect_communities(graph)
+        hubs = god_nodes(graph, top_n=5)
+        bridges = surprising_connections(graph, comms)
+        questions = suggest_questions(graph, comms)
+        lines = [
+            f"God nodes: {hubs}",
+            f"Communities: {len(comms)} | Cross-community bridges: {len(bridges)}",
+            *questions,
+        ]
+        return {"content": [{"type": "text", "text": "\n".join(lines)}]}
+
+    def handle_audit(self, _arguments: dict[str, Any]) -> dict[str, Any]:
+        self.refresh_index()
+        graph = self.graph or ArchitectureGraph()
+        violations = self.scanner.run_rules(self.files, graph, self.project_root)
+        findings = audit_repo(self.project_root, self.files, graph, violations, self.config)
+        return {"content": [{"type": "text", "text": format_audit(findings)}]}
+
     def _tool_catalog(self) -> list[dict[str, Any]]:
         """Compact tool schemas minimizing agent context overhead."""
         return [
@@ -280,6 +362,46 @@ class AedileMcpServer:
                     "properties": {"marker": {"type": "string"}},
                 },
             },
+            {
+                "name": "aedile_explain",
+                "description": "Explain a module's imports, dependents, coupling, and blast radius.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"module": {"type": "string"}},
+                    "required": ["module"],
+                },
+            },
+            {
+                "name": "aedile_path",
+                "description": "Find shortest dependency path between two modules.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {"type": "string"},
+                        "target": {"type": "string"},
+                    },
+                    "required": ["source", "target"],
+                },
+            },
+            {
+                "name": "aedile_insights",
+                "description": "Return god nodes, subsystem communities, bridges, and architecture questions.",
+                "inputSchema": {"type": "object", "properties": {}},
+            },
+            {
+                "name": "aedile_audit",
+                "description": "Run whole-repo ranked architectural audit (Must/Should/Nice to have).",
+                "inputSchema": {"type": "object", "properties": {}},
+            },
+            {
+                "name": "aedile_hotspots",
+                "description": "Profile a Python script under cProfile and rank hotspots by share x portability.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"script": {"type": "string"}},
+                    "required": ["script"],
+                },
+            },
         ]
 
     def run(self) -> None:
@@ -292,6 +414,11 @@ class AedileMcpServer:
             "aedile_map": self.handle_map,
             "aedile_review": self.handle_review,
             "aedile_debt": self.handle_debt,
+            "aedile_explain": self.handle_explain,
+            "aedile_path": self.handle_path,
+            "aedile_insights": self.handle_insights,
+            "aedile_audit": self.handle_audit,
+            "aedile_hotspots": self.handle_hotspots,
         }
         while True:
             try:

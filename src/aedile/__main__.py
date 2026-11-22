@@ -5,13 +5,22 @@ import time
 from collections.abc import Sequence
 
 from aedile import __version__
+from aedile.cli.doctor import format_doctor, run_doctor
 from aedile.cli.setup import VALID_MODES, get_intensity_mode, set_intensity_mode, setup_agents
 from aedile.core.baseline import BaselineManager
 from aedile.core.debt import format_debt_ledger, scan_debt
+from aedile.core.graph_insights import (
+    detect_communities,
+    explain_module,
+    god_nodes,
+    suggest_questions,
+    surprising_connections,
+)
+from aedile.core.hotspots import profile_target
 from aedile.core.inference import detect_src_dirs, infer_layers
 from aedile.core.mapper import build_codebase_map
-from aedile.core.reporter import to_html, to_json, to_sarif
-from aedile.core.reviewer import format_review, review_changes
+from aedile.core.reporter import to_card_svg, to_html, to_json, to_sarif
+from aedile.core.reviewer import audit_repo, format_audit, format_review, review_changes
 from aedile.core.scanner import Scanner
 from aedile.infrastructure.cache import ScanCache
 from aedile.infrastructure.telemetry import TelemetryStore
@@ -106,6 +115,8 @@ def _cmd_check(project_root: str, args: argparse.Namespace) -> int:
         rendered = to_sarif(report)
     elif args.format == "html":
         rendered = to_html(report, graph)
+    elif args.format == "card":
+        rendered = to_card_svg(report)
     else:
         lines = [
             f"Aedile v{__version__} | {report.metrics.total_files} files | "
@@ -143,15 +154,21 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     # check
     p_check = subparsers.add_parser("check", help="Run full-repository architectural checks.")
-    p_check.add_argument("--format", choices=("text", "json", "sarif", "html"), default="text")
+    p_check.add_argument(
+        "--format", choices=("text", "json", "sarif", "html", "card"), default="text"
+    )
     p_check.add_argument("--output", default=None)
     p_check.add_argument("--baseline", action="store_true")
     p_check.add_argument("--update-baseline", action="store_true")
     p_check.add_argument("--infer-layers", action="store_true")
 
     # graph
-    p_graph = subparsers.add_parser("graph", help="Export dependency graph (mermaid or svg).")
-    p_graph.add_argument("--format", choices=("mermaid", "svg"), default="mermaid")
+    p_graph = subparsers.add_parser(
+        "graph", help="Export dependency graph (mermaid, svg, graphml, or cypher)."
+    )
+    p_graph.add_argument(
+        "--format", choices=("mermaid", "svg", "graphml", "cypher"), default="mermaid"
+    )
     p_graph.add_argument("--output", default=None)
 
     # map
@@ -183,6 +200,35 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_board.add_argument("--output", default=None)
 
+    # explain
+    p_explain = subparsers.add_parser(
+        "explain", help="Explain a module's dependencies and blast radius."
+    )
+    p_explain.add_argument("module")
+
+    # path
+    p_path = subparsers.add_parser(
+        "path", help="Find shortest dependency path between two modules."
+    )
+    p_path.add_argument("source")
+    p_path.add_argument("target")
+
+    # insights
+    subparsers.add_parser(
+        "insights", help="Show god nodes, communities, cross-subsystem bridges, and questions."
+    )
+
+    # audit
+    subparsers.add_parser("audit", help="Run whole-repo ranked architectural audit.")
+
+    # hotspots
+    p_hot = subparsers.add_parser("hotspots", help="Profile a Python script and rank hotspots.")
+    p_hot.add_argument("script")
+    p_hot.add_argument("script_args", nargs="*")
+
+    # doctor
+    subparsers.add_parser("doctor", help="Check Python toolchain, cache, and agent integrations.")
+
     args = parser.parse_args(argv)
     project_root = os.getcwd()
 
@@ -195,7 +241,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         cfg = _load_config(project_root)
         scanner = Scanner(cfg, ScanCache(os.path.join(project_root, ".aedile", "cache.json")))
         _, graph = scanner.scan_project(project_root)
-        out = graph.export_svg() if args.format == "svg" else graph.export_mermaid()
+        if args.format == "svg":
+            out = graph.export_svg()
+        elif args.format == "graphml":
+            out = graph.export_graphml()
+        elif args.format == "cypher":
+            out = graph.export_cypher()
+        else:
+            out = graph.export_mermaid()
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(out)
@@ -254,6 +307,57 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"[Aedile] Telemetry board written to {args.output}")
         else:
             print(store.statusline())
+        return 0
+    if args.command == "explain":
+        cfg = _load_config(project_root)
+        scanner = Scanner(cfg, ScanCache(os.path.join(project_root, ".aedile", "cache.json")))
+        _, graph = scanner.scan_project(project_root)
+        info = explain_module(graph, args.module)
+        if not info["found"]:
+            print(f"Module '{args.module}' not found. Candidates: {info['candidates']}")
+            return 1
+        print(
+            f"Module: {info['module']}\n"
+            f"Metrics: {info['metrics']}\n"
+            f"Imports ({len(info['imports'])}): {', '.join(info['imports']) or 'none'}\n"
+            f"Imported by ({len(info['imported_by'])}): {', '.join(info['imported_by']) or 'none'}\n"
+            f"Blast radius ({len(info['blast_radius'])}): {', '.join(info['blast_radius']) or 'none'}"
+        )
+        return 0
+    if args.command == "path":
+        cfg = _load_config(project_root)
+        scanner = Scanner(cfg, ScanCache(os.path.join(project_root, ".aedile", "cache.json")))
+        _, graph = scanner.scan_project(project_root)
+        p = graph.find_shortest_path(args.source, args.target)
+        print(" -> ".join(p) if p else f"No path from {args.source} to {args.target}.")
+        return 0
+    if args.command == "insights":
+        cfg = _load_config(project_root)
+        scanner = Scanner(cfg, ScanCache(os.path.join(project_root, ".aedile", "cache.json")))
+        _, graph = scanner.scan_project(project_root)
+        comms = detect_communities(graph)
+        print("God nodes:", god_nodes(graph, top_n=5))
+        print(f"Communities: {len(comms)}")
+        print(f"Cross-community bridges: {len(surprising_connections(graph, comms))}")
+        for q in suggest_questions(graph, comms):
+            print(f"- {q}")
+        return 0
+    if args.command == "audit":
+        cfg = _load_config(project_root)
+        scanner = Scanner(cfg, ScanCache(os.path.join(project_root, ".aedile", "cache.json")))
+        files, graph = scanner.scan_project(project_root)
+        violations = scanner.run_rules(files, graph, project_root)
+        print(format_audit(audit_repo(project_root, files, graph, violations, cfg)))
+        return 0
+    if args.command == "hotspots":
+        wall, spots = profile_target(args.script, project_root, args.script_args)
+        print(f"Profiled {args.script} in {wall}s ({len(spots)} functions):")
+        for h in spots[:10]:
+            cov = f" [covered_by={h.covered_by}]" if h.covered_by else ""
+            print(f"  {h.func_id}:L{h.line} share={h.share:.1%} score={h.score}{cov}")
+        return 0
+    if args.command == "doctor":
+        print(format_doctor(run_doctor(project_root)))
         return 0
 
     # Default: Start MCP Server

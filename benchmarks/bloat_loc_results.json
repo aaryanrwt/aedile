@@ -1,0 +1,193 @@
+{
+  "model": "qwen3:4b",
+  "summary": {
+    "avg_loc_no_aedile": 19.6,
+    "avg_loc_with_aedile": 9.9,
+    "avg_output_tokens_no_aedile": 400,
+    "avg_output_tokens_with_aedile": 400,
+    "reuse_rate_no_aedile": "2/10",
+    "reuse_rate_with_aedile": "10/10"
+  },
+  "tasks": [
+    {
+      "id": "t01_toml_deps",
+      "expected": "tomllib",
+      "no_aedile": {
+        "loc": 18,
+        "prompt_tokens": 46,
+        "output_tokens": 400,
+        "elapsed_s": 34.36,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 12,
+        "prompt_tokens": 654,
+        "output_tokens": 400,
+        "elapsed_s": 12.23,
+        "reused": true
+      }
+    },
+    {
+      "id": "t02_sha256_hash",
+      "expected": "hashlib",
+      "no_aedile": {
+        "loc": 29,
+        "prompt_tokens": 54,
+        "output_tokens": 400,
+        "elapsed_s": 11.36,
+        "reused": true
+      },
+      "with_aedile": {
+        "loc": 10,
+        "prompt_tokens": 575,
+        "output_tokens": 400,
+        "elapsed_s": 11.96,
+        "reused": true
+      }
+    },
+    {
+      "id": "t03_tokenize_symbol",
+      "expected": "tokenize",
+      "no_aedile": {
+        "loc": 21,
+        "prompt_tokens": 50,
+        "output_tokens": 400,
+        "elapsed_s": 11.52,
+        "reused": true
+      },
+      "with_aedile": {
+        "loc": 10,
+        "prompt_tokens": 570,
+        "output_tokens": 400,
+        "elapsed_s": 12.21,
+        "reused": true
+      }
+    },
+    {
+      "id": "t04_scan_cache",
+      "expected": "ScanCache",
+      "no_aedile": {
+        "loc": 21,
+        "prompt_tokens": 50,
+        "output_tokens": 400,
+        "elapsed_s": 11.7,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 9,
+        "prompt_tokens": 1048,
+        "output_tokens": 400,
+        "elapsed_s": 12.73,
+        "reused": true
+      }
+    },
+    {
+      "id": "t05_cycle_finder",
+      "expected": "find_all_cycles",
+      "no_aedile": {
+        "loc": 20,
+        "prompt_tokens": 48,
+        "output_tokens": 400,
+        "elapsed_s": 11.72,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 11,
+        "prompt_tokens": 921,
+        "output_tokens": 400,
+        "elapsed_s": 13.01,
+        "reused": true
+      }
+    },
+    {
+      "id": "t06_codebase_map",
+      "expected": "build_codebase_map",
+      "no_aedile": {
+        "loc": 12,
+        "prompt_tokens": 53,
+        "output_tokens": 400,
+        "elapsed_s": 11.72,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 12,
+        "prompt_tokens": 578,
+        "output_tokens": 400,
+        "elapsed_s": 12.14,
+        "reused": true
+      }
+    },
+    {
+      "id": "t07_sarif_export",
+      "expected": "to_sarif",
+      "no_aedile": {
+        "loc": 21,
+        "prompt_tokens": 55,
+        "output_tokens": 400,
+        "elapsed_s": 11.8,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 11,
+        "prompt_tokens": 731,
+        "output_tokens": 400,
+        "elapsed_s": 12.29,
+        "reused": true
+      }
+    },
+    {
+      "id": "t08_baseline_filter",
+      "expected": "BaselineManager",
+      "no_aedile": {
+        "loc": 20,
+        "prompt_tokens": 47,
+        "output_tokens": 400,
+        "elapsed_s": 11.92,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 13,
+        "prompt_tokens": 730,
+        "output_tokens": 400,
+        "elapsed_s": 12.63,
+        "reused": true
+      }
+    },
+    {
+      "id": "t09_blast_radius",
+      "expected": "get_blast_radius",
+      "no_aedile": {
+        "loc": 20,
+        "prompt_tokens": 50,
+        "output_tokens": 400,
+        "elapsed_s": 11.58,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 5,
+        "prompt_tokens": 660,
+        "output_tokens": 400,
+        "elapsed_s": 12.56,
+        "reused": true
+      }
+    },
+    {
+      "id": "t10_debt_scan",
+      "expected": "scan_debt",
+      "no_aedile": {
+        "loc": 14,
+        "prompt_tokens": 51,
+        "output_tokens": 400,
+        "elapsed_s": 11.75,
+        "reused": false
+      },
+      "with_aedile": {
+        "loc": 6,
+        "prompt_tokens": 730,
+        "output_tokens": 400,
+        "elapsed_s": 12.3,
+        "reused": true
+      }
+    }
+  ]
+}

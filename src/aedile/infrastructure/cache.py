@@ -7,6 +7,15 @@ from aedile.shared.logging import get_logger
 
 logger = get_logger("aedile.infrastructure.cache")
 
+_DEFAULT_MAX_CACHE_BYTES = 64 * 1024 * 1024  # 64 MiB memory-bomb guard
+
+
+def _max_cache_bytes() -> int:
+    raw = os.environ.get("AEDILE_MAX_CACHE_BYTES", "").strip()
+    if raw.isdigit() and int(raw) > 0:
+        return int(raw)
+    return _DEFAULT_MAX_CACHE_BYTES
+
 
 class ScanCache:
     def __init__(self, cache_filepath: str) -> None:
@@ -17,12 +26,16 @@ class ScanCache:
         self.load()
 
     def load(self) -> None:
-        """Loads cache from file. If it doesn't exist or is corrupt, initializes an empty cache."""
+        """Loads cache from file. If it doesn't exist, exceeds size cap, or is corrupt, resets."""
         if not os.path.exists(self.cache_filepath):
             self.entries = {}
             return
 
         try:
+            if os.path.getsize(self.cache_filepath) > _max_cache_bytes():
+                logger.warning("Cache file exceeds AEDILE_MAX_CACHE_BYTES cap, resetting.")
+                self.entries = {}
+                return
             with open(self.cache_filepath, encoding="utf-8") as f:
                 self.entries = json.load(f)
         except Exception as e:

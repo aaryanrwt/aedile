@@ -129,3 +129,23 @@ def to_html(report: Report, graph: ArchitectureGraph) -> str:
   </table>
 </body>
 </html>"""
+
+
+def to_card_svg(report: Report) -> str:
+    """Renders a shareable dark-theme SVG summary card for PRs and READMEs."""
+    proj = html.escape(report.project_name)
+    score = report.metrics.risk_score
+    color = "#238636" if score < 15.0 else ("#d29922" if score < 40.0 else "#da3633")
+    bar_w = max(8.0, min(260.0, (100.0 - score) * 2.6))
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200" role="img" aria-label="Aedile Report Card: {proj}">
+  <rect width="720" height="200" rx="14" fill="#0d1117"/>
+  <rect x="0.5" y="0.5" width="719" height="199" rx="13.5" fill="none" stroke="#30363d"/>
+  <text x="28" y="40" font-family="monospace" font-size="13" fill="#58a6ff">AEDILE v{html.escape(__version__)} ARCHITECTURE CARD</text>
+  <text x="28" y="74" font-family="sans-serif" font-size="22" font-weight="700" fill="#e6edf3">{proj}</text>
+  <text x="28" y="132" font-family="sans-serif" font-size="48" font-weight="800" fill="{color}">{score}<tspan dx="8" font-size="18" font-weight="600" fill="#8b949e">risk score</tspan></text>
+  <text x="410" y="76" font-family="sans-serif" font-size="13" fill="#8b949e">Files: {report.metrics.total_files} | LOC: {report.metrics.total_loc}</text>
+  <text x="410" y="102" font-family="sans-serif" font-size="13" fill="#8b949e">Violations: {report.metrics.total_violations} (Cycles: {report.metrics.dependency_cycles}, Layers: {report.metrics.layer_violations})</text>
+  <rect x="410" y="122" width="260" height="14" rx="4" fill="#21262d"/>
+  <rect x="410" y="122" width="{bar_w:.1f}" height="14" rx="4" fill="{color}"/>
+  <text x="28" y="176" font-family="sans-serif" font-size="12" fill="#8b949e">Scan time: {report.scan_time_seconds}s | Generated: {html.escape(report.generated_at)}</text>
+</svg>"""

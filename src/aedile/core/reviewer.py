@@ -2,7 +2,9 @@ import os
 import subprocess
 from dataclasses import dataclass
 
+from aedile.core.debt import scan_debt
 from aedile.core.graph import ArchitectureGraph
+from aedile.core.graph_insights import god_nodes
 from aedile.core.models import SourceFile, Violation
 from aedile.core.parser import compute_module_name, os_path_root
 from aedile.shared.config import Config
@@ -160,3 +162,64 @@ def format_review(findings: list[ReviewFinding]) -> str:
             lines.append(f"   - **If we skip it:** {f.if_skipped}")
             idx += 1
     return "\n".join(lines)
+
+
+def audit_repo(
+    project_root: str,
+    files: list[SourceFile],
+    graph: ArchitectureGraph,
+    violations: list[Violation],
+    config: Config,
+) -> list[ReviewFinding]:
+    """Whole-repo ranked audit combining violations, god nodes, and untriggered debt."""
+    findings: list[ReviewFinding] = []
+
+    for v in violations:
+        sev = "must_fix" if v.severity == "error" else "should_fix"
+        findings.append(
+            ReviewFinding(
+                severity=sev,
+                title=f"{v.rule_name}",
+                location=f"{v.relative_path}:L{v.line}",
+                what_this_is=f"Architectural rule `{v.rule_name}` triggered.",
+                problem=v.message,
+                fix="Refactor import direction or extract shared interface.",
+                if_skipped="Architectural entropy and coupling increase across releases.",
+            )
+        )
+
+    for hub in god_nodes(graph, top_n=3):
+        if hub["degree"] >= 6:
+            findings.append(
+                ReviewFinding(
+                    severity="should_fix",
+                    title=f"Architectural hub `{hub['module']}` (degree {hub['degree']})",
+                    location=graph.module_to_file.get(hub["module"], hub["module"]),
+                    what_this_is=f"Module has fan_in={hub['fan_in']}, fan_out={hub['fan_out']}.",
+                    problem="Too many modules depend on or flow through this single hub.",
+                    fix="Split cohesive responsibilities into smaller focused modules.",
+                    if_skipped="Changes to this module carry a wide blast radius.",
+                )
+            )
+
+    for entry in scan_debt(project_root, config):
+        if not entry.has_trigger:
+            findings.append(
+                ReviewFinding(
+                    severity="nice_to_have",
+                    title=f"Debt marker without upgrade trigger ({entry.marker})",
+                    location=f"{entry.relative_path}:L{entry.line}",
+                    what_this_is=f"Shortcut `{entry.ceiling}` has no revisit condition.",
+                    problem="Untriggered shortcuts silently become permanent.",
+                    fix="Add a concrete upgrade trigger after a comma: `# shortcut: limit, trigger`.",
+                    if_skipped="Technical debt stays invisible in future audits.",
+                )
+            )
+
+    return findings[:20]
+
+
+def format_audit(findings: list[ReviewFinding]) -> str:
+    if not findings:
+        return "Healthy. Nothing to fix."
+    return format_review(findings).replace("Blast-Radius Review", "Whole-Repo Ranked Audit")

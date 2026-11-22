@@ -1,0 +1,47 @@
+{
+  "model": "qwen3:4b",
+  "results": [
+    {
+      "arm": "baseline",
+      "total_loc": 168,
+      "prompt_tokens": 329,
+      "output_tokens": 2600,
+      "elapsed_s": 73.67,
+      "ast_valid_files": "0/4",
+      "reused_shared_db": false,
+      "reused_shared_models": false,
+      "architecture_errors": 0,
+      "architecture_warnings": 2,
+      "pytest_passed": false,
+      "pytest_summary": "  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))"
+    },
+    {
+      "arm": "ponytail",
+      "total_loc": 99,
+      "prompt_tokens": 393,
+      "output_tokens": 2600,
+      "elapsed_s": 74.02,
+      "ast_valid_files": "0/4",
+      "reused_shared_db": false,
+      "reused_shared_models": false,
+      "architecture_errors": 0,
+      "architecture_warnings": 2,
+      "pytest_passed": false,
+      "pytest_summary": "  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))"
+    },
+    {
+      "arm": "aedile",
+      "total_loc": 88,
+      "prompt_tokens": 1268,
+      "output_tokens": 2600,
+      "elapsed_s": 76.13,
+      "ast_valid_files": "0/4",
+      "reused_shared_db": false,
+      "reused_shared_models": false,
+      "architecture_errors": 0,
+      "architecture_warnings": 2,
+      "pytest_passed": false,
+      "pytest_summary": "  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))"
+    }
+  ]
+}
