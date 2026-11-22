@@ -1,6 +1,6 @@
 # Supported Agents & Environments
 
-Aedile runs locally over stdio JSON-RPC 2.0 (Model Context Protocol) and supports `SessionStart` / `SubagentStart` lifecycle hooks.
+Aedile runs locally over stdio JSON-RPC 2.0 (Model Context Protocol, **11 tools**) and supports `SessionStart` / `SubagentStart` lifecycle hooks.
 
 ---
 
@@ -12,10 +12,11 @@ Run inside your repository to register Aedile MCP and lifecycle hooks idempotent
 aedile setup
 ```
 
-Preview planned changes without writing files:
+Preview planned changes without writing files, and verify your environment:
 
 ```bash
 aedile setup --dry-run
+aedile doctor
 ```
 
 ---
